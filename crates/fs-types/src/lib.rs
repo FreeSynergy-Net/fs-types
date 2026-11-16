@@ -8,7 +8,7 @@
 //!
 //! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`PersonArt`], [`Attendee`],
 //!   [`ContactAddress`], [`ObjectId`], [`Revision`], [`MediaType`], [`FileRef`], [`Page`], [`PageCursor`],
-//!   [`Problem`] (DESIGN.md, "Shared types").
+//!   [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
 //! * Positions (v0.0.24): [`GeoPoint`] (the coordinate), [`PositionFix`] with [`FixSource`] and [`AccuracyLevel`] (origin, time, blur).
 //! * Named place (v0.0.25): [`Location`] (JSCalendar `Location`: optional name, description, types, coordinates, relativeTo, timeZone, address, links) with [`LocationParts`].
 //!
@@ -75,7 +75,7 @@ pub use location::{Location, RelativeTo};
 pub use location_parts::LocationParts;
 pub use moment::{LocalDateTime, Utc, Zone, ZoneKind};
 pub use name::Name;
-pub use paging::{Page, PageCursor, Problem};
+pub use paging::{Capabilities, Page, PageCursor, Problem};
 pub use person::{Attendee, ContactAddress, PersonArt, PersonRef};
 pub use place::Place;
 pub use problem::TypeProblem;
