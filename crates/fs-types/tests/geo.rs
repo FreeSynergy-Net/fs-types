@@ -187,6 +187,28 @@ fn fix_records_the_level_and_never_gets_finer() {
 }
 
 #[test]
+fn fix_with_a_forged_level_is_blurred_anyway() {
+    let p = GeoPoint::from_lat_lon(48.2010, 16.3695).unwrap();
+    let fake = PositionFix {
+        point: p,
+        source: FixSource::Manual,
+        measured_at: None,
+        blur: Some(AccuracyLevel::Region),
+    };
+    let out = fake.at_level(AccuracyLevel::Km1);
+    assert_ne!(out.point, p);
+    assert_eq!(out.point, AccuracyLevel::Region.blur(p));
+    assert_eq!(out.blur, Some(AccuracyLevel::Region));
+}
+
+#[test]
+fn blurred_text_has_no_rounding_rest() {
+    let p = GeoPoint::from_lat_lon(48.20101, 123.00499).unwrap();
+    let t = AccuracyLevel::Km1.blur(p).to_geo_uri();
+    assert!(t.starts_with("geo:48.205,123.005;"), "{t}");
+}
+
+#[test]
 fn place_gives_and_takes_a_geo_point() {
     let p = GeoPoint::new(48.2, 16.37, Some(5.0), Some(10.0)).unwrap();
     let place = Place::from_point(&p);

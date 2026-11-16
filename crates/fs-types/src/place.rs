@@ -43,7 +43,9 @@ impl Place {
         )
     }
 
-    /// The place for a [`GeoPoint`]; no name, no address (the wrapper with those is planned, see DESIGN.md v0.0.24).
+    /// The place for a [`GeoPoint`]. `GeoPoint` to `Place` to `GeoPoint` loses nothing; `Place` to `GeoPoint` to `Place`
+    /// does not always (`geo:0,180` becomes `geo:0,-180`, `geo:-0,-0` stays text). Planned for v0.0.25: `parse` and
+    /// `canonical` normalise through `GeoPoint`. No name, no address (the wrapper with those is planned, see DESIGN.md v0.0.24).
     #[must_use]
     pub fn from_point(point: &GeoPoint) -> Self {
         // A GeoPoint is valid, so its own text always reads back.

@@ -44,7 +44,9 @@ pub enum AccuracyLevel {
 
 impl AccuracyLevel {
     /// The most the blur moves a point, in metres (nominal: the cell is smaller than this on every latitude and the
-    /// point goes to the middle of its cell). `0.0` for `Exact`.
+    /// point goes to the middle of its cell). `0.0` for `Exact`. The cell is a grid in degrees: its east-west width
+    /// shrinks with cos(latitude) (at 60 degrees north a `Km1` cell is 1.1 km by 0.56 km). The levels are upper
+    /// bounds of the shift; the limit for AI (about 1 km) is not enforced by this type, it belongs in `fs-access`.
     #[must_use]
     pub fn radius_m(self) -> f64 {
         match self {
@@ -78,7 +80,10 @@ impl AccuracyLevel {
         let lat = cell_middle(point.lat(), -90.0, 180.0, step);
         let lon = cell_middle(point.lon(), -180.0, 360.0, step);
         let u = point.uncertainty().unwrap_or(0.0).max(self.radius_m());
-        GeoPoint::new(lat, lon, None, Some(u)).unwrap_or(point.without_alt())
+        // The middle of a cell is always in range and finite, so this never fails. It must not fall back to the
+        // input: that would let the unblurred point through.
+        GeoPoint::new(lat, lon, None, Some(u))
+            .unwrap_or_else(|_| unreachable!("a cell middle is a valid point"))
     }
 }
 
@@ -91,7 +96,9 @@ fn cell_middle(x: f64, origin: f64, span: f64, step: f64) -> f64 {
     let index = (((x - origin) / step).floor().max(0.0) as u64).min(cells - 1);
     #[allow(clippy::cast_precision_loss)]
     let middle = (index as f64 + 0.5).mul_add(step, origin);
-    middle
+    // Round to the digits of the cell (one more than the step has), so the text shows 123.005, not 123.00500000000001.
+    let scale = 10.0 / step;
+    (middle * scale).round() / scale
 }
 
 /// A position with its origin, its measuring time and the level it was blurred to.
@@ -112,12 +119,12 @@ impl PositionFix {
     /// already has changes nothing (blur never makes a position more exact).
     #[must_use]
     pub fn at_level(self, level: AccuracyLevel) -> Self {
-        if self.blur.is_some_and(|b| b >= level) {
-            return self;
-        }
+        // `blur` is a public field and may claim a level the point never had: always blur (it is idempotent), at the
+        // coarser of the claimed and the requested level.
+        let lvl = self.blur.map_or(level, |b| b.max(level));
         Self {
-            point: level.blur(self.point),
-            blur: Some(level),
+            point: lvl.blur(self.point),
+            blur: Some(lvl),
             ..self
         }
     }
