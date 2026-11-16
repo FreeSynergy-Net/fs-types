@@ -1,9 +1,8 @@
 //! The shared types of the topic crates: construction, refusals, the time forms of ADR 0085.
 
 use fs_types::{
-    Attendee, BasicValue, Capabilities, ContactAddress, Date, FileRef, LocalDateTime, MediaType,
-    ObjectId, Page, PageCursor, PersonArt, PersonRef, Problem, Reference, Revision, TypeProblem,
-    Utc, Zone, ZoneKind,
+    Attendee, BasicValue, ContactAddress, Date, LocalDateTime, ObjectId, PageCursor, PersonArt,
+    PersonRef, Problem, Reference, Revision, TypeProblem, Utc, Zone, ZoneKind,
 };
 
 #[test]
@@ -114,26 +113,6 @@ fn zone_is_iana_or_custom() {
 }
 
 #[test]
-fn person_reference_and_attendee() {
-    let id = Reference::parse("urn:uuid:0192f5a0-7b1c-7cde-8f00-123456789abc").unwrap();
-    let p = PersonRef {
-        id: id.clone(),
-        art: PersonArt::Person,
-        abzug: Some(ObjectId([7; 16])),
-    };
-    assert_eq!(p.clone(), p);
-    assert_ne!(
-        p,
-        PersonRef {
-            abzug: None,
-            ..p.clone()
-        }
-    );
-    assert_ne!(Attendee::Resource(id.clone()), Attendee::Location(id));
-    assert_eq!(Attendee::Actor(p.clone()), Attendee::Actor(p));
-}
-
-#[test]
 fn contact_address_takes_six_schemes_and_is_no_identity() {
     let a = ContactAddress::parse("MAILTO:ada@example.org").unwrap();
     assert_eq!(a.scheme(), "mailto");
@@ -159,24 +138,6 @@ fn contact_address_takes_six_schemes_and_is_no_identity() {
 }
 
 #[test]
-fn plain_carriers_compare_by_value() {
-    assert!(Revision(2) > Revision(1));
-    assert!(ObjectId([1; 16]) < ObjectId([2; 16]));
-    let f = FileRef {
-        iri: Reference::parse("urn:sha256:00").unwrap(),
-        sha256: [0; 32],
-        media_type: MediaType("text/calendar".into()),
-    };
-    assert_eq!(f.clone(), f);
-    let page = Page {
-        items: vec![1, 2],
-        next: Some(PageCursor("c".into())),
-    };
-    assert_eq!(page.clone().next, Some(PageCursor("c".into())));
-    assert_eq!(Capabilities::default().0, Vec::<(String, bool)>::new());
-}
-
-#[test]
 fn problem_carries_a_code_and_the_new_codes_are_stable() {
     let p = Problem::from_type("start", TypeProblem::BadTime);
     assert_eq!((p.field.as_str(), p.reason.as_str()), ("start", "time.bad"));
@@ -191,4 +152,103 @@ fn problem_carries_a_code_and_the_new_codes_are_stable() {
         assert_eq!(problem.code(), code);
         assert_eq!(problem.to_string(), format!("problem.{code}"));
     }
+}
+
+#[test]
+fn a_reference_needs_something_after_the_scheme() {
+    for bad in ["x:", "mailto:", "urn:", " https: "] {
+        assert_eq!(
+            Reference::parse(bad).err(),
+            Some(TypeProblem::BadUri),
+            "{bad:?}"
+        );
+    }
+    for bad in ["mailto:", "tel:", "https:"] {
+        assert_eq!(
+            ContactAddress::parse(bad).err(),
+            Some(TypeProblem::BadUri),
+            "{bad:?}"
+        );
+    }
+    assert!(Reference::parse("a:b").is_ok());
+}
+
+#[test]
+fn utc_takes_what_it_can_show_and_says_why_not() {
+    // Limits: year 0 and year 9999 in UTC are in, one millisecond beyond is out (also through an offset).
+    let first = Utc::parse("0000-01-01T00:00:00.000Z").unwrap();
+    assert_eq!(first.millis(), -62_167_219_200_000);
+    assert_eq!(
+        first.to_rfc3339().as_deref(),
+        Some("0000-01-01T00:00:00.000Z")
+    );
+    let last = Utc::parse("9999-12-31T23:59:59.999Z").unwrap();
+    assert_eq!(last.millis(), 253_402_300_799_999);
+    assert_eq!(
+        last.to_rfc3339().as_deref(),
+        Some("9999-12-31T23:59:59.999Z")
+    );
+    assert_eq!(Utc::from_millis(first.millis() - 1).to_rfc3339(), None);
+    assert_eq!(Utc::from_millis(last.millis() + 1).to_rfc3339(), None);
+    assert_eq!(
+        Utc::parse("0000-01-01T00:00:00+01:00").err(),
+        Some(TypeProblem::OutOfRange)
+    );
+    assert_eq!(
+        Utc::parse("9999-12-31T23:59:59.999-01:00").err(),
+        Some(TypeProblem::OutOfRange)
+    );
+    // Documented choices: leap second refused; `-00:00`, lower case `t`/`z` and spaces around it accepted.
+    assert_eq!(
+        Utc::parse("2016-12-31T23:59:60Z").err(),
+        Some(TypeProblem::BadDateTime)
+    );
+    let same = Utc::parse("2026-11-16T09:30:05.000Z").unwrap();
+    for ok in [
+        "2026-11-16T09:30:05-00:00",
+        "2026-11-16t09:30:05z",
+        "  2026-11-16T09:30:05Z  ",
+        "2026-11-16T10:30:05+01:00",
+    ] {
+        assert_eq!(Utc::parse(ok).unwrap(), same, "{ok:?}");
+    }
+    // What `to_rfc3339` writes is read back to the same instant.
+    for ms in [
+        -62_167_219_200_000,
+        -1,
+        0,
+        1,
+        1_794_821_405_123,
+        253_402_300_799_999,
+    ] {
+        let u = Utc::from_millis(ms);
+        assert_eq!(Utc::parse(&u.to_rfc3339().unwrap()).unwrap(), u);
+    }
+}
+
+#[test]
+fn values_differ_where_they_should() {
+    let id = Reference::parse("urn:uuid:0192f5a0-7b1c-7cde-8f00-123456789abc").unwrap();
+    let p = PersonRef {
+        id: id.clone(),
+        art: PersonArt::Person,
+        abzug: Some(ObjectId([7; 16])),
+    };
+    assert_ne!(
+        p,
+        PersonRef {
+            abzug: None,
+            ..p.clone()
+        }
+    );
+    assert_ne!(
+        p,
+        PersonRef {
+            art: PersonArt::Group,
+            ..p.clone()
+        }
+    );
+    assert_ne!(Attendee::Resource(id.clone()), Attendee::Location(id));
+    assert!(Revision(2) > Revision(1) && ObjectId([1; 16]) < ObjectId([2; 16]));
+    assert_ne!(PageCursor("a".into()), PageCursor("b".into()));
 }

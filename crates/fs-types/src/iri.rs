@@ -105,7 +105,12 @@ impl BasicValue for Reference {
     const KIND: BasicType = BasicType::Reference;
 
     fn parse(typed: &str) -> Result<Self, TypeProblem> {
-        absolute(typed).map(|t| Self(t.to_owned()))
+        let t = absolute(typed)?;
+        // `x:` names nothing: a reference needs something after the scheme (the stand-ins refused it too).
+        if t.split_once(':').is_none_or(|(_, rest)| rest.is_empty()) {
+            return Err(TypeProblem::BadUri);
+        }
+        Ok(Self(t.to_owned()))
     }
 
     fn canonical(&self) -> String {

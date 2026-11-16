@@ -1,6 +1,6 @@
 [package]
 name = "fs-types"
-description = "FreeSynergy basic types (e-mail, phone, name, address, place, date, language, link, image, key, choice, keywords, reference): check, normalise, suggest; and the type description every program reports (ADR 0066)"
+description = "FreeSynergy basic types (e-mail, phone, name, address, place, date, language, link, image, key, choice, keywords, reference): check, normalise, suggest; the shared types of the topic crates (instant, wall-clock time, zone, person reference, attendee, contact address, object id, revision, media type, file, page); and the type description every program reports (ADR 0066)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

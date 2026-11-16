@@ -11,6 +11,7 @@ A workspace crate of `fs-interfaces`, next to `fs-mcp`, not a repository of its 
 | Part | Pattern | Why |
 |---|---|---|
 | `BasicValue` and one file per kind (`text`, `contact`, `language`, `iri`, `datetime`, `place`, `key`, `keywords`, `name`, `address`, `image`, `choice`) | Value object + Template method (`parse`/`canonical` per type, `check`/`suggest` provided) | valid on construction, equal values have equal canonical text; the trait is the interface (ADR 0043) |
+| `moment` (`Utc`, `LocalDateTime`, `Zone`), `person` (`PersonRef`, `Attendee`, `ContactAddress`), `ids` (`ObjectId`, `Revision`, `MediaType`, `FileRef`), `paging` (`PageCursor`, `Page`, `Capabilities`, `Problem`) | Value object (no `BasicType` kind, so not `BasicValue`) | the types the topic crates share (ADR 0085); `TypeProblem` is the union of their stand-ins |
 | `language`, `iri`, `datetime`, `place`, `contact` | Adapter over a free crate (`oxilangtag`, `iri-string`, `chrono`, `geo-uri`, `fs-interfaces::values`) | do not rebuild what exists (ADR 0015, `coding.md` §4) |
 | `rule.rs` `Rule`, `BasicRules` | Registry of Strategy objects | a generated frontend knows only a field's `BasicType`; it reaches check/normalise/suggest by kind |
 | `describe/` `FieldDescription`, `CommandDescription`, `TypeDescription` | Value object + Builder | read from a program, written by chaining |
@@ -62,7 +63,7 @@ Candidate `calcard` 0.3.14 (Stalwart Labs; `Apache-2.0 OR MIT`; first released 2
 * `Edit` paths deeper than one step (map key, then property): the wire form carries them, `Edit::check` refuses them (`NestedPath`) because descriptions have flat fields; nested typing comes with nested descriptions.
 
 * `onlineService`, `timeZone`, `duration`, `recurrence`, `quantity`, `money`, `colour`, `sound`, `video`, formatted text: not yet in `BasicType`.
-* Date-time without offset (JSCalendar `LocalDateTime`) and IANA time zones: need the tz database.
+* IANA time zones: `Zone` checks the form only; that a name exists in the tz database, and the conversion between a zone and UTC, are not here (a recurrence or a calendar needs them). `LocalDateTime` has no fraction of a second (JSCalendar allows one; an importer cuts it off and says so).
 * Language: well-formed only, the IANA subtag registry is not consulted. Address: country code checked for shape, not against the ISO 3166-1 list. Place: points only (no `GeoJSON` shapes; unknown `geo:` parameters are dropped; the poles are not canonicalised). Key: OpenPGP fingerprints only (no SSH, age, X.509). Phone and e-mail: no existence check (a network matter).
 * Suggestions: phone, date, date-time, place, key, name, address, image, text offer none (`suggest` returns an empty list on purpose).
 * Components (`input`, `display`, `compact`, `cell`) per basic type are thread C's, in `fs-components`; nothing of the look is here.

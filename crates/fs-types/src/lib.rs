@@ -6,8 +6,9 @@
 //! * Type description: [`TypeDescription`] (fields, commands), the trait [`DescribesType`] a program implements for each
 //!   data type it owns, and [`TypeRegistry`] that collects them and answers the `TypeCatalog` contract.
 //!
-//! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`Attendee`],
-//!   [`ObjectId`], [`Revision`], [`FileRef`], [`Page`], [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
+//! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`PersonArt`], [`Attendee`],
+//!   [`ContactAddress`], [`ObjectId`], [`Revision`], [`MediaType`], [`FileRef`], [`Page`], [`PageCursor`],
+//!   [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
 //!
 //! Pattern: Registry (rules by kind, descriptions by name), Value object, Adapter (to the free crates and to the wire
 //! form). Where it lives and why: `DESIGN.md`.

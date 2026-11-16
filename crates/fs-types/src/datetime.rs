@@ -1,8 +1,8 @@
 //! `Date` and `DateTime`: RFC 3339.
 //!
 //! Pattern: Adapter over `chrono` (parsing and calendar arithmetic), Value object around it. A `DateTime` is an
-//! instant with its offset; a date-time without offset (JSCalendar `LocalDateTime`) and time zones need the IANA
-//! database and are `Unsupported` in this version (DESIGN.md).
+//! instant with its offset. The date-time without offset (JSCalendar `LocalDateTime`), the instant in UTC and the
+//! time zone are `moment.rs`; whether an IANA name exists is the tz database's to say (not checked here, DESIGN.md).
 
 use chrono::{DateTime as ChronoDateTime, Datelike, NaiveDate, SecondsFormat};
 use fs_interfaces::types_capnp::BasicType;

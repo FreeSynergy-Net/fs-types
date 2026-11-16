@@ -5,7 +5,7 @@
 //! [`crate::BasicValue`]s (no `BasicType` kind yet; appending one is a schema change of its own), so `parse` and the
 //! canonical text are methods of the types themselves.
 
-use chrono::{DateTime as ChronoDateTime, SecondsFormat};
+use chrono::{DateTime as ChronoDateTime, SecondsFormat, Timelike};
 
 use crate::{BasicValue, Date, TypeProblem};
 
@@ -27,17 +27,27 @@ impl Utc {
     }
 
     /// Read an RFC 3339 date-time with an offset (`…Z`, `…+01:00`), to the millisecond; finer fractions are cut off
-    /// (never rounded).
+    /// (never rounded). Spaces around it are ignored; `t` and `z` in lower case and `-00:00` (RFC 3339 section 4.3:
+    /// UTC, offset unknown) are accepted; a leap second (`23:59:60`) is refused, because an instant is a count of
+    /// milliseconds and has no place for it.
     ///
     /// # Errors
-    /// `Empty`, `BadDateTime` (not RFC 3339, or no offset).
+    /// `Empty`, `BadDateTime` (not RFC 3339, no offset, leap second), `OutOfRange` (the instant in UTC is not in the
+    /// years 0 to 9999, which `to_rfc3339` could show).
     pub fn parse(typed: &str) -> Result<Self, TypeProblem> {
         let t = typed.trim();
         if t.is_empty() {
             return Err(TypeProblem::Empty);
         }
         let dt = ChronoDateTime::parse_from_rfc3339(t).map_err(|_| TypeProblem::BadDateTime)?;
-        Ok(Self(dt.timestamp_millis()))
+        if dt.nanosecond() >= 1_000_000_000 {
+            return Err(TypeProblem::BadDateTime);
+        }
+        let u = Self(dt.timestamp_millis());
+        if u.to_rfc3339().is_none() {
+            return Err(TypeProblem::OutOfRange);
+        }
+        Ok(u)
     }
 
     /// The canonical text, `YYYY-MM-DDTHH:MM:SS.mmmZ`; `None` for an instant no calendar year 0-9999 can show.
