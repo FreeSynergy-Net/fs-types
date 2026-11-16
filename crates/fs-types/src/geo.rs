@@ -2,8 +2,8 @@
 //!
 //! Pattern: Value object (valid on construction, equal values are equal bit for bit) and Adapter over the free crate
 //! `geo-uri` for reading RFC 5870. A `GeoPoint` is only the coordinate: latitude, longitude, optional height and
-//! optional uncertainty. It has no name and no address; that is the job of [`crate::Place`] (the place wrapper, plan
-//! fs-maps E0). Inside a program latitude comes first (ISO 6709, RFC 5870); the `GeoJSON` order longitude, latitude
+//! optional uncertainty. It has no name and no address; that is the job of [`crate::Location`] (the wrapper; `Place` is the point as wire form,
+//! plan fs-maps E0). Inside a program latitude comes first (ISO 6709, RFC 5870); the `GeoJSON` order longitude, latitude
 //! (RFC 7946 section 3.1.1) exists only as the helpers [`GeoPoint::to_geojson_position`] and
 //! [`GeoPoint::from_geojson_position`] for the border.
 

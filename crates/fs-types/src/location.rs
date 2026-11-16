@@ -1,16 +1,16 @@
 //! `Location`: a named place, the JSCalendar `Location` (RFC 8984 section 4.2.5) as one shared type.
 //!
-//! Pattern: Value object, valid on construction (`Location::new`, then the `with_*` steps), Adapter to the JSCalendar form
+//! Pattern: Value object, valid on construction (`Location::new`, then the `with_*` steps; the name is optional as in RFC 8984), Adapter to the JSCalendar form
 //! ([`LocationParts`], plain data: the JSON mapping itself is the job of `fs-jscalendar`). Beside the name, the
 //! description, the location types, the coordinates and the links of JSCalendar it holds a postal [`Address`] (an
-//! addition of ours: JSCalendar has none). The coordinates are a [`GeoPoint`]; on the wire they are a [`Place`] (a `geo:`
+//! addition of ours: JSCalendar has none), and `relativeTo` ([`RelativeTo`]) and `timeZone` ([`Zone`]). The coordinates are a [`GeoPoint`]; on the wire they are a [`Place`] (a `geo:`
 //! URI, JSCalendar `coordinates`), so there is no new wire kind: a `Location` is a structure over the kinds that exist.
 //! `Place` stays the point and nothing else (ADR 0085: one meaning for each wire kind).
 
 use std::collections::BTreeSet;
 
 use crate::value::{bad_char, one_line};
-use crate::{Address, BasicValue, GeoPoint, Link, Place, TypeProblem};
+use crate::{Address, GeoPoint, Link, LocationParts, Place, TypeProblem, Zone};
 
 /// Longest name, in characters.
 const NAME_MAX: usize = 1024;
@@ -22,31 +22,46 @@ const TYPE_MAX: usize = 128;
 /// A named place: a meeting room, a shop, a trail head.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Location {
-    name: String,
+    name: Option<String>,
     description: Option<String>,
+    relative_to: Option<RelativeTo>,
+    time_zone: Option<Zone>,
     types: BTreeSet<String>,
     coordinates: Option<GeoPoint>,
     address: Option<Address>,
     links: Vec<Link>,
 }
 
-/// The parts of a [`Location`] in the form JSCalendar names them, as plain texts and values (the mapping to JSON is
-/// `fs-jscalendar`'s). `coordinates` is a `geo:` URI (RFC 5870), each link an absolute URI (`href`), each location
-/// type a value of the IANA registry or a vendor value (`domain:value`).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LocationParts {
-    /// `name`.
-    pub name: String,
-    /// `description`.
-    pub description: Option<String>,
-    /// `locationTypes` (the keys that are `true`), sorted.
-    pub location_types: Vec<String>,
-    /// `coordinates`, a `geo:` URI.
-    pub coordinates: Option<String>,
-    /// Our addition: the postal address.
-    pub address: Option<Address>,
-    /// `links`, the `href` of each.
-    pub links: Vec<String>,
+/// Where a location is relative to its event (RFC 8984 `relativeTo`): its `start` or its `end`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum RelativeTo {
+    /// `start`.
+    Start,
+    /// `end`.
+    End,
+}
+
+impl RelativeTo {
+    /// The JSCalendar word.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Start => "start",
+            Self::End => "end",
+        }
+    }
+
+    /// Read the JSCalendar word.
+    ///
+    /// # Errors
+    /// `NotInList` for anything but `start` and `end`.
+    pub fn parse(word: &str) -> Result<Self, TypeProblem> {
+        match word {
+            "start" => Ok(Self::Start),
+            "end" => Ok(Self::End),
+            _ => Err(TypeProblem::NotInList),
+        }
+    }
 }
 
 fn location_type(typed: &str) -> Result<String, TypeProblem> {
@@ -64,19 +79,47 @@ fn location_type(typed: &str) -> Result<String, TypeProblem> {
 }
 
 impl Location {
-    /// A location with a name and nothing else.
-    ///
-    /// # Errors
-    /// `Empty` (no name), `Character`, `TooLong` as for a one-line text.
-    pub fn new(name: &str) -> Result<Self, TypeProblem> {
-        Ok(Self {
-            name: one_line(name, NAME_MAX)?,
+    /// A location with nothing in it (the `name` is optional in RFC 8984 section 4.2.5).
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            name: None,
             description: None,
+            relative_to: None,
+            time_zone: None,
             types: BTreeSet::new(),
             coordinates: None,
             address: None,
             links: Vec::new(),
-        })
+        }
+    }
+
+    /// With a name (one line; empty text removes it).
+    ///
+    /// # Errors
+    /// `Character`, `TooLong` as for a one-line text.
+    pub fn with_name(self, name: &str) -> Result<Self, TypeProblem> {
+        let name = if name.trim().is_empty() {
+            None
+        } else {
+            Some(one_line(name, NAME_MAX)?)
+        };
+        Ok(Self { name, ..self })
+    }
+
+    /// With the position relative to the event (`None` removes it).
+    #[must_use]
+    pub fn with_relative_to(self, relative_to: Option<RelativeTo>) -> Self {
+        Self {
+            relative_to,
+            ..self
+        }
+    }
+
+    /// With a time zone (`None` removes it): the zone the location's own times are in (RFC 8984 `timeZone`).
+    #[must_use]
+    pub fn with_time_zone(self, time_zone: Option<Zone>) -> Self {
+        Self { time_zone, ..self }
     }
 
     /// With a description (lines allowed; empty text removes it).
@@ -141,10 +184,22 @@ impl Location {
         }
     }
 
-    /// The name, never empty.
+    /// The name, if any, never empty.
     #[must_use]
-    pub fn name(&self) -> &str {
-        &self.name
+    pub fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    /// Relative to the start or the end of the event, if said.
+    #[must_use]
+    pub fn relative_to(&self) -> Option<RelativeTo> {
+        self.relative_to
+    }
+
+    /// The time zone, if any.
+    #[must_use]
+    pub fn time_zone(&self) -> Option<&Zone> {
+        self.time_zone.as_ref()
     }
 
     /// The description, if any.
@@ -185,40 +240,22 @@ impl Location {
     /// The JSCalendar form of this location, ready for the JSON mapping.
     #[must_use]
     pub fn to_parts(&self) -> LocationParts {
-        LocationParts {
-            name: self.name.clone(),
-            description: self.description.clone(),
-            location_types: self.types.iter().cloned().collect(),
-            coordinates: self.coordinates.map(|c| c.to_geo_uri()),
-            address: self.address.clone(),
-            links: self.links.iter().map(BasicValue::canonical).collect(),
-        }
+        LocationParts::from_location(self)
     }
 
     /// Read the JSCalendar form: every part is checked again, so a `Location` is valid whatever the JSON said.
     ///
     /// # Errors
-    /// The first part that breaks its rule: `Empty` (name), `Character`, `TooLong`, a `geo:` problem
-    /// (`BadPlace`, `PlaceRange`, `OutOfRange`), a link problem (`BadUri`, `NotAbsolute`, `UnsafeScheme`).
+    /// The first part that breaks its rule: `Character`, `TooLong` (name, description, types), `NotInList`
+    /// (`relativeTo`), `BadZone`, a `geo:` problem (`BadPlace`, `PlaceRange`, `OutOfRange`), a link problem
+    /// (`BadUri`, `NotAbsolute`, `UnsafeScheme`).
     pub fn from_parts(parts: &LocationParts) -> Result<Self, TypeProblem> {
-        let types: Vec<&str> = parts.location_types.iter().map(String::as_str).collect();
-        let links = parts
-            .links
-            .iter()
-            .map(|l| Link::parse(l))
-            .collect::<Result<Vec<_>, _>>()?;
-        let coordinates = parts
-            .coordinates
-            .as_deref()
-            .map(GeoPoint::from_geo_uri)
-            .transpose()?;
-        Self::new(&parts.name)?
-            .with_description(parts.description.as_deref().unwrap_or(""))?
-            .with_location_types(&types)
-            .map(|l| {
-                l.with_coordinates(coordinates)
-                    .with_address(parts.address.clone())
-                    .with_links(&links)
-            })
+        parts.to_location()
+    }
+}
+
+impl Default for Location {
+    fn default() -> Self {
+        Self::new()
     }
 }

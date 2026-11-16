@@ -10,7 +10,7 @@
 //!   [`ContactAddress`], [`ObjectId`], [`Revision`], [`MediaType`], [`FileRef`], [`Page`], [`PageCursor`],
 //!   [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
 //! * Positions (v0.0.24): [`GeoPoint`] (the coordinate), [`PositionFix`] with [`FixSource`] and [`AccuracyLevel`] (origin, time, blur).
-//! * Named place (v0.0.25): [`Location`] (JSCalendar `Location`: name, description, types, coordinates, address, links) with [`LocationParts`].
+//! * Named place (v0.0.25): [`Location`] (JSCalendar `Location`: optional name, description, types, coordinates, relativeTo, timeZone, address, links) with [`LocationParts`].
 //!
 //! Pattern: Registry (rules by kind, descriptions by name), Value object, Adapter (to the free crates and to the wire
 //! form). Where it lives and why: `DESIGN.md`.
@@ -32,6 +32,7 @@ mod key;
 mod keywords;
 mod language;
 mod location;
+mod location_parts;
 mod moment;
 mod name;
 mod paging;
@@ -59,7 +60,8 @@ pub use iri::{Link, Reference};
 pub use key::Key;
 pub use keywords::Keywords;
 pub use language::Language;
-pub use location::{Location, LocationParts};
+pub use location::{Location, RelativeTo};
+pub use location_parts::LocationParts;
 pub use moment::{LocalDateTime, Utc, Zone, ZoneKind};
 pub use name::Name;
 pub use paging::{Capabilities, Page, PageCursor, Problem};

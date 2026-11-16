@@ -1,7 +1,8 @@
 //! `Location` (JSCalendar shape) and the `Place` / `GeoPoint` normalisation in both directions.
 
 use fs_types::{
-    Address, AddressKind, BasicValue, GeoPoint, Link, Location, LocationParts, Place, TypeProblem,
+    Address, AddressKind, BasicValue, GeoPoint, Link, Location, LocationParts, Place, RelativeTo,
+    TypeProblem, Zone,
 };
 
 fn full_location() -> Location {
@@ -11,7 +12,8 @@ fn full_location() -> Location {
         "",
     )
     .unwrap();
-    Location::new("  Room 4  ")
+    Location::new()
+        .with_name("  Room 4  ")
         .unwrap()
         .with_description("Second floor\r\nbehind the lift")
         .unwrap()
@@ -28,15 +30,19 @@ fn full_location() -> Location {
 }
 
 #[test]
-fn name_is_required_and_checked() {
-    assert_eq!(Location::new("  ").err(), Some(TypeProblem::Empty));
-    assert_eq!(Location::new("a\u{7}b").err(), Some(TypeProblem::Character));
+fn name_is_optional_and_checked() {
+    assert!(Location::new().name().is_none());
+    assert!(Location::new().with_name("  ").unwrap().name().is_none());
     assert_eq!(
-        Location::new(&"x".repeat(1025)).err(),
+        Location::new().with_name("a\u{7}b").err(),
+        Some(TypeProblem::Character)
+    );
+    assert_eq!(
+        Location::new().with_name(&"x".repeat(1025)).err(),
         Some(TypeProblem::TooLong)
     );
-    let l = Location::new(" Café ").unwrap();
-    assert_eq!(l.name(), "Café");
+    let l = Location::new().with_name(" Café ").unwrap();
+    assert_eq!(l.name(), Some("Café"));
     assert!(l.description().is_none() && l.coordinates().is_none() && l.address().is_none());
     assert!(l.links().is_empty() && l.location_types().count() == 0 && l.place().is_none());
 }
@@ -44,7 +50,7 @@ fn name_is_required_and_checked() {
 #[test]
 fn parts_are_normalised_and_checked() {
     let l = full_location();
-    assert_eq!(l.name(), "Room 4");
+    assert_eq!(l.name(), Some("Room 4"));
     assert_eq!(l.description(), Some("Second floor\nbehind the lift"));
     assert_eq!(
         l.location_types().collect::<Vec<_>>(),
@@ -52,21 +58,24 @@ fn parts_are_normalised_and_checked() {
     );
     assert_eq!(l.links().len(), 1, "same link twice once");
     assert_eq!(
-        Location::new("x")
+        Location::new()
+            .with_name("x")
             .unwrap()
             .with_location_types(&["a b"])
             .err(),
         Some(TypeProblem::Character)
     );
     assert_eq!(
-        Location::new("x")
+        Location::new()
+            .with_name("x")
             .unwrap()
             .with_location_types(&[" "])
             .err(),
         Some(TypeProblem::Empty)
     );
     assert_eq!(
-        Location::new("x")
+        Location::new()
+            .with_name("x")
             .unwrap()
             .with_description("a\u{202E}b")
             .err(),
@@ -90,42 +99,80 @@ fn coordinates_travel_as_place() {
 fn parts_round_trip_both_ways() {
     let l = full_location();
     let parts = l.to_parts();
-    assert_eq!(parts.coordinates.as_deref(), Some("geo:48.2,16.37,171;u=5"));
-    assert_eq!(parts.links, ["https://example.org/room"]);
+    assert_eq!(parts.coordinates(), Some("geo:48.2,16.37,171;u=5"));
+    assert_eq!(parts.links(), ["https://example.org/room"]);
     assert_eq!(Location::from_parts(&parts).unwrap(), l);
     assert_eq!(Location::from_parts(&parts).unwrap().to_parts(), parts);
-    let minimal = Location::new("Home").unwrap();
+    let minimal = Location::new().with_name("Home").unwrap();
     assert_eq!(Location::from_parts(&minimal.to_parts()).unwrap(), minimal);
 }
 
 #[test]
 fn from_parts_checks_every_part() {
-    let base = Location::new("Home").unwrap().to_parts();
-    let with = |f: fn(&mut LocationParts)| {
-        let mut p = base.clone();
-        f(&mut p);
-        Location::from_parts(&p).err()
-    };
-    assert_eq!(with(|p| p.name = " ".into()), Some(TypeProblem::Empty));
+    let with = |p: LocationParts| Location::from_parts(&p).err();
     assert_eq!(
-        with(|p| p.coordinates = Some("geo:91,0".into())),
+        with(LocationParts::new().with_name("a\u{7}b")),
+        Some(TypeProblem::Character)
+    );
+    assert_eq!(
+        with(LocationParts::new().with_coordinates("geo:91,0")),
         Some(TypeProblem::PlaceRange)
     );
     assert_eq!(
-        with(|p| p.coordinates = Some("52,13".into())),
+        with(LocationParts::new().with_coordinates("52,13")),
         Some(TypeProblem::BadPlace)
     );
     assert_eq!(
-        with(|p| p.links = vec!["javascript:x".into()]),
+        with(LocationParts::new().with_links(&["javascript:x"])),
         Some(TypeProblem::UnsafeScheme)
     );
     assert_eq!(
-        with(|p| p.links = vec!["/rel".into()]),
+        with(LocationParts::new().with_links(&["/rel"])),
         Some(TypeProblem::NotAbsolute)
     );
     assert_eq!(
-        with(|p| p.location_types = vec!["a b".into()]),
+        with(LocationParts::new().with_location_types(&["a b"])),
         Some(TypeProblem::Character)
+    );
+    assert_eq!(
+        with(LocationParts::new().with_relative_to("middle")),
+        Some(TypeProblem::NotInList)
+    );
+    assert_eq!(
+        with(LocationParts::new().with_time_zone("Europe/ Vienna")),
+        Some(TypeProblem::BadZone)
+    );
+}
+
+#[test]
+fn jscalendar_location_without_name_is_accepted() {
+    let parts = LocationParts::new().with_coordinates("geo:1,2");
+    let l = Location::from_parts(&parts).unwrap();
+    assert!(l.name().is_none());
+    assert_eq!(l.to_parts(), parts);
+    assert_eq!(
+        Location::from_parts(&LocationParts::new()).unwrap(),
+        Location::new()
+    );
+}
+
+#[test]
+fn relative_to_and_time_zone_round_trip() {
+    let l = Location::new()
+        .with_name("Gate")
+        .unwrap()
+        .with_relative_to(Some(RelativeTo::End))
+        .with_time_zone(Some(Zone::iana("Europe/Vienna").unwrap()));
+    let parts = l.to_parts();
+    assert_eq!(parts.relative_to(), Some("end"));
+    assert_eq!(parts.time_zone(), Some("Europe/Vienna"));
+    assert_eq!(Location::from_parts(&parts).unwrap(), l);
+    let custom = Location::new().with_time_zone(Some(Zone::custom("/mine").unwrap()));
+    assert_eq!(Location::from_parts(&custom.to_parts()).unwrap(), custom);
+    assert_eq!(RelativeTo::parse("start").unwrap().as_str(), "start");
+    assert_eq!(
+        RelativeTo::parse("Start").err(),
+        Some(TypeProblem::NotInList)
     );
 }
 
