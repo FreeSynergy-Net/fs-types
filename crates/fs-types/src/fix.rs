@@ -46,7 +46,8 @@ impl AccuracyLevel {
     /// The most the blur moves a point, in metres (nominal: the cell is smaller than this on every latitude and the
     /// point goes to the middle of its cell). `0.0` for `Exact`. The cell is a grid in degrees: its east-west width
     /// shrinks with cos(latitude) (at 60 degrees north a `Km1` cell is 1.1 km by 0.56 km). The levels are upper
-    /// bounds of the shift; the limit for AI (about 1 km) is not enforced by this type, it belongs in `fs-access`.
+    /// bounds of the shift; the limit for AI is the city (`Km10`, about 10 km; user decision 16.11.) and is not enforced by this type, it belongs in
+    /// `fs-access`. Routing and directions without an AI may be exact.
     #[must_use]
     pub fn radius_m(self) -> f64 {
         match self {

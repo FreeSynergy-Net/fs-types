@@ -1,76 +1,58 @@
 //! `Place`: a point as a `geo:` URI (RFC 5870).
 //!
-//! Pattern: Adapter over the free crate `geo-uri` (parse and print RFC 5870), Value object around it. WGS-84 only
-//! (the only coordinate system RFC 5870 defines); the crate range-checks latitude and longitude. Shapes (`GeoJSON`
-//! lines and areas) are `Unsupported` here (DESIGN.md).
-
-use std::str::FromStr;
+//! Pattern: Value object over [`GeoPoint`] (the one core of a coordinate), Adapter to the wire form (`BasicType::Place`,
+//! a `geo:` text). `parse` and `canonical` go through `GeoPoint`, so a text and its normal form are one value:
+//! `geo:0,180` is `geo:0,-180`, `geo:-0,-0` is `geo:0,0`, a parameter other than `u=` is dropped. WGS-84 only (the only
+//! coordinate system RFC 5870 defines). Shapes (`GeoJSON` lines and areas) are `Unsupported` here (DESIGN.md). The named
+//! wrapper (name, address, links) is [`crate::Location`].
 
 use fs_interfaces::types_capnp::BasicType;
-use geo_uri::GeoUri;
 
 use crate::{BasicValue, GeoPoint, TypeProblem};
 
 /// A point on Earth: `geo:48.2010,16.3695` with optional altitude and uncertainty.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Place(GeoUri);
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Place(GeoPoint);
 
 impl Place {
     /// Latitude in degrees, -90 to 90.
     #[must_use]
     pub fn latitude(&self) -> f64 {
-        self.0.latitude()
+        self.0.lat()
     }
 
-    /// Longitude in degrees, -180 to 180.
+    /// Longitude in degrees, -180 (included) to 180 (excluded).
     #[must_use]
     pub fn longitude(&self) -> f64 {
-        self.0.longitude()
+        self.0.lon()
     }
-}
 
-impl Place {
     /// The coordinate of this place as a [`GeoPoint`] (height and uncertainty kept).
     ///
     /// # Errors
-    /// `OutOfRange` if the stored numbers are not finite (a `geo:` text such as `geo:nan,0`).
+    /// None any more (a `Place` always holds a valid `GeoPoint`); the `Result` stays for the callers of v0.0.24.
     pub fn point(&self) -> Result<GeoPoint, TypeProblem> {
-        GeoPoint::new(
-            self.0.latitude(),
-            self.0.longitude(),
-            self.0.altitude(),
-            self.0.uncertainty(),
-        )
+        Ok(self.0)
     }
 
-    /// The place for a [`GeoPoint`]. `GeoPoint` to `Place` to `GeoPoint` loses nothing; `Place` to `GeoPoint` to `Place`
-    /// does not always (`geo:0,180` becomes `geo:0,-180`, `geo:-0,-0` stays text). Planned for v0.0.25: `parse` and
-    /// `canonical` normalise through `GeoPoint`. No name, no address (the wrapper with those is planned, see DESIGN.md v0.0.24).
+    /// The place for a [`GeoPoint`]. Both ways lose nothing: `GeoPoint` to `Place` to `GeoPoint`, and `Place` to
+    /// `GeoPoint` to `Place` (since v0.0.25 the text is normalised on the way in).
     #[must_use]
     pub fn from_point(point: &GeoPoint) -> Self {
-        // A GeoPoint is valid, so its own text always reads back.
-        Self::parse(&point.to_geo_uri()).unwrap_or_else(|_| unreachable!("valid GeoPoint"))
+        Self(*point)
     }
 }
 
 impl BasicValue for Place {
     const KIND: BasicType = BasicType::Place;
 
+    /// # Errors
+    /// As [`GeoPoint::from_geo_uri`]: `Empty`, `BadPlace`, `PlaceRange`, `OutOfRange` (also a negative `u=`).
     fn parse(typed: &str) -> Result<Self, TypeProblem> {
-        let t = typed.trim();
-        if t.is_empty() {
-            return Err(TypeProblem::Empty);
-        }
-        // The crate range-checks latitude and longitude itself; we only tell the person which kind of error it was.
-        GeoUri::from_str(t).map(Self).map_err(|e| match e {
-            geo_uri::Error::OutOfRangeLatitude | geo_uri::Error::OutOfRangeLongitude => {
-                TypeProblem::PlaceRange
-            }
-            _ => TypeProblem::BadPlace,
-        })
+        GeoPoint::from_geo_uri(typed).map(Self)
     }
 
     fn canonical(&self) -> String {
-        self.0.to_string()
+        self.0.to_geo_uri()
     }
 }
