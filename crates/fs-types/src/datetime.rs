@@ -4,7 +4,7 @@
 //! instant with its offset; a date-time without offset (JSCalendar `LocalDateTime`) and time zones need the IANA
 //! database and are `Unsupported` in this version (DESIGN.md).
 
-use chrono::{DateTime as ChronoDateTime, NaiveDate, SecondsFormat};
+use chrono::{DateTime as ChronoDateTime, Datelike, NaiveDate, SecondsFormat};
 use fs_interfaces::types_capnp::BasicType;
 
 use crate::{BasicValue, TypeProblem};
@@ -18,6 +18,24 @@ impl Date {
     #[must_use]
     pub fn as_naive(&self) -> NaiveDate {
         self.0
+    }
+
+    /// The year (proleptic Gregorian, may be negative).
+    #[must_use]
+    pub fn year(&self) -> i32 {
+        self.0.year()
+    }
+
+    /// The month, 1 to 12.
+    #[must_use]
+    pub fn month(&self) -> u8 {
+        u8::try_from(self.0.month()).unwrap_or(0)
+    }
+
+    /// The day of the month, 1 to 31.
+    #[must_use]
+    pub fn day(&self) -> u8 {
+        u8::try_from(self.0.day()).unwrap_or(0)
     }
 }
 

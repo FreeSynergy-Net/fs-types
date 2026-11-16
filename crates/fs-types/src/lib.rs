@@ -6,6 +6,9 @@
 //! * Type description: [`TypeDescription`] (fields, commands), the trait [`DescribesType`] a program implements for each
 //!   data type it owns, and [`TypeRegistry`] that collects them and answers the `TypeCatalog` contract.
 //!
+//! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`Attendee`],
+//!   [`ObjectId`], [`Revision`], [`FileRef`], [`Page`], [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
+//!
 //! Pattern: Registry (rules by kind, descriptions by name), Value object, Adapter (to the free crates and to the wire
 //! form). Where it lives and why: `DESIGN.md`.
 
@@ -17,12 +20,16 @@ mod choice;
 mod contact;
 mod datetime;
 pub mod describe;
+mod ids;
 mod image;
 mod iri;
 mod key;
 mod keywords;
 mod language;
+mod moment;
 mod name;
+mod paging;
+mod person;
 mod place;
 mod problem;
 mod rule;
@@ -38,12 +45,16 @@ pub use describe::{
 };
 pub use fs_interfaces::types_capnp::{AddressKind, BasicType, NameKind};
 pub use fs_interfaces::values::{EmailAddress, PhoneNumber};
+pub use ids::{FileRef, MediaType, ObjectId, Revision};
 pub use image::Image;
 pub use iri::{Link, Reference};
 pub use key::Key;
 pub use keywords::Keywords;
 pub use language::Language;
+pub use moment::{LocalDateTime, Utc, Zone, ZoneKind};
 pub use name::Name;
+pub use paging::{Capabilities, Page, PageCursor, Problem};
+pub use person::{Attendee, ContactAddress, PersonArt, PersonRef};
 pub use place::Place;
 pub use problem::TypeProblem;
 pub use rule::{BasicRules, Rule};

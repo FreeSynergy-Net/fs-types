@@ -44,6 +44,10 @@ A workspace crate of `fs-interfaces`, next to `fs-mcp`, not a repository of its 
 
 Candidate `calcard` 0.3.14 (Stalwart Labs; `Apache-2.0 OR MIT`; first released 2025-05, updated 2026-09-15, 15 releases in 2026-08/09, about 89000 downloads; repository `stalwartlabs/calcard`). Described as "iCalendar/JSCalendar and vCard/JSContact parsing, building and conversion library". Tried in a throw-away crate (not in this repo): parse a vCard 4.0 text, `VCard::into_jscontact::<String, String>()` gives a JSContact JSON value (`name.components`, `emails`, `phones`, `addresses`, `vCard.convertedProperties` for what vCard keeps), and `JSContact::into_vcard()` writes vCard 4.0 back (`FN`, `N`, `EMAIL`, `TEL;VALUE=URI`, `ADR` with `JSCOMPS`, `PROP-ID`). Other crates seen: `jscontact` 0.2.1 (RFC 9553 types only, 7000 downloads, last 2025-01), `vcard` 0.6.0 (vCard 4.0 RFC 6350 and 9554, parse and generate, no JSContact), `vcard4` 0.7.3 (parser only). **Result: use `calcard` for vCard import and export in `fs-people` (thread P); do not build our own.** Not done here: no dependency added to this repo (nothing in `fs-types` needs it), the field-by-field coverage of RFC 9553 against `description.md` is thread P's check; `calcard` pulls in more than we need (iCalendar), accepted for now; its types are generic over the id type, `String` works.
 
+## Shared types of the topic crates (v0.0.22)
+
+`moment.rs` (`Utc`, `LocalDateTime`, `Zone`), `person.rs` (`PersonRef`, `Attendee`, `ContactAddress`), `ids.rs`, `paging.rs`: Value objects, Pattern lines in each module; `TypeProblem` is the union of all stand-ins. Names, mapping and deliberate differences: `DESIGN.md` of the repository, section v0.0.22.
+
 ## State
 
 | Area | State |

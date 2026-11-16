@@ -2,6 +2,12 @@
 //!
 //! Pattern: Value object — a plain code, compared by value. The sentence is the program's (ADR 0057,
 //! `coding.md` §2a): [`TypeProblem::code`] is the translation key suffix, never shown as it is.
+//!
+//! One set for all programs. The stand-ins of the first topic crates (calendar, tasks, people, groups: `Empty`,
+//! `BadDate`, `BadTime`, `BadReference`, `BadZone`, `OutOfRange`; packages: `Empty`, `BadId`, `BadVersion`,
+//! `BadUrl`) map into it as follows, each to the same name except `BadReference` (here [`TypeProblem::BadUri`], or
+//! [`TypeProblem::NotAbsolute`] for a text that is no absolute IRI) and `BadUrl` ([`TypeProblem::BadUri`]); going back,
+//! each stand-in reads every value it has a name for and nothing else (DESIGN.md, "Shared types").
 
 use fs_interfaces::values::ValueProblem;
 
@@ -44,6 +50,18 @@ pub enum TypeProblem {
     NoParts,
     /// A country code is two letters A–Z (ISO 3166-1 alpha-2).
     BadCountryCode,
+    /// Not a time of day on a wall clock: `YYYY-MM-DDTHH:MM:SS`, hour 0-23, minute 0-59, second 0-59 (JSCalendar
+    /// `LocalDateTime`, no fraction, no zone).
+    BadTime,
+    /// Not a time zone id: an IANA name has no leading `/` and no space; a custom zone starts with `/` (RFC 8984
+    /// section 4.7.2).
+    BadZone,
+    /// A number outside what the type holds (an instant that no calendar can show, a count of zero).
+    OutOfRange,
+    /// Not an identifier of letters, digits and the characters the type allows (package or source id).
+    BadId,
+    /// Not a version (`major.minor.patch` with an optional pre-release).
+    BadVersion,
 }
 
 impl TypeProblem {
@@ -69,6 +87,11 @@ impl TypeProblem {
             Self::BadKeyword => "keywords.bad",
             Self::NoParts => "no-parts",
             Self::BadCountryCode => "address.bad-country-code",
+            Self::BadTime => "time.bad",
+            Self::BadZone => "zone.bad",
+            Self::OutOfRange => "out-of-range",
+            Self::BadId => "id.bad",
+            Self::BadVersion => "version.bad",
         }
     }
 }
