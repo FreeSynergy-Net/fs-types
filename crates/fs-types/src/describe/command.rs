@@ -3,7 +3,7 @@
 //! Pattern: Builder, as [`super::FieldDescription`]. A command is described, not executed: the program carries it
 //! out through its own contract (`people.capnp`, `tasks.capnp` …), the description only lets a frontend offer it.
 
-use fs_interfaces::types_capnp::{BasicType, CommandKind};
+use crate::types_capnp::{BasicType, CommandKind};
 
 use super::FieldDescription;
 

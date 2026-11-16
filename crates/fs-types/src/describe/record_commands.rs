@@ -3,7 +3,7 @@
 //! Pattern: Specification — the rule decided 2026-11-10 (written in `types.capnp`): the commands whose input holds a
 //! reference to the type itself, plus `change` and `delete`; the rest belongs to the type as a whole.
 
-use fs_interfaces::types_capnp::{BasicType, CommandKind};
+use crate::types_capnp::{BasicType, CommandKind};
 
 use super::{CommandDescription, TypeDescription};
 

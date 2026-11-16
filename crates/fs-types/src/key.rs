@@ -4,7 +4,7 @@
 //! (SHA-256). Spaces, colons and a leading `openpgp4fpr:` are accepted when typed; the canonical form is the bare
 //! digits in upper case. Other key kinds (SSH, age, X.509) are `Unsupported` (DESIGN.md).
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 
 use crate::{BasicValue, TypeProblem};
 

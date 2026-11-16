@@ -4,7 +4,7 @@
 //! value object around it is ours. Well-formed only: whether the subtags are registered at IANA is not checked
 //! (`Unsupported`, DESIGN.md).
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 use oxilangtag::LanguageTag;
 
 use crate::{BasicValue, TypeProblem};

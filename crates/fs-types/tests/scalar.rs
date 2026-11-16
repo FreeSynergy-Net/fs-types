@@ -39,7 +39,7 @@ fn email_goes_through_the_shared_value_and_keeps_its_code() {
     );
     assert_eq!(
         bad::<EmailAddress>("ada.example.org"),
-        TypeProblem::Contact(fs_interfaces::values::ValueProblem::MissingAt)
+        TypeProblem::Contact(fs_types::values::ValueProblem::MissingAt)
     );
     assert_eq!(bad::<EmailAddress>(""), TypeProblem::Empty);
     assert_eq!(

@@ -7,8 +7,8 @@
 
 use std::marker::PhantomData;
 
-use fs_interfaces::types_capnp::BasicType;
-use fs_interfaces::values::{EmailAddress, PhoneNumber};
+use crate::types_capnp::BasicType;
+use crate::values::{EmailAddress, PhoneNumber};
 
 use crate::{
     Address, BasicValue, Choice, Date, DateTime, Image, Key, Keywords, Language, Link,

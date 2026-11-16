@@ -4,7 +4,7 @@
 //! from components is only a list of the values (`, ` between them) and `full` stays what the person wrote. The country
 //! code is checked for shape (two letters); whether it is an assigned ISO 3166-1 code is `Unsupported` (DESIGN.md).
 
-use fs_interfaces::types_capnp::{AddressKind, BasicType};
+use crate::types_capnp::{AddressKind, BasicType};
 use unicode_normalization::UnicodeNormalization;
 
 use crate::value::bad_char;

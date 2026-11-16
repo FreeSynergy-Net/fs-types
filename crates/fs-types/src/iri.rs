@@ -4,7 +4,7 @@
 //! `Link` is normalised (scheme and host in lower case, dot segments removed) because two spellings of one link
 //! should be one value; a `Reference` is an identity (AS2 `id`) and is kept exactly as written.
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 use iri_string::types::IriStr;
 
 use crate::{BasicValue, TypeProblem};

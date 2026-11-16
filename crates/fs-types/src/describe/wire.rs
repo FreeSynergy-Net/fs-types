@@ -3,10 +3,10 @@
 //! Pattern: Adapter between the generated reader/builder types and the plain structs. A kind or command kind this
 //! version does not know reads as `unknown` (the schema's promise); a text that is not UTF-8 is an error.
 
-use capnp::struct_list;
-use fs_interfaces::types_capnp::{
+use crate::types_capnp::{
     BasicType, CommandKind, command_description, field_description, type_description,
 };
+use capnp::struct_list;
 
 use super::{CommandDescription, FieldDescription, TypeDescription, TypeRegistry};
 

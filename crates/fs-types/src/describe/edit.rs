@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 
 use super::TypeDescription;
 use super::check::{RecordIssue, RecordProblem};

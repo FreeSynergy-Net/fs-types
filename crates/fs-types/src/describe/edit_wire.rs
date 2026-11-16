@@ -2,7 +2,7 @@
 //!
 //! Pattern: Adapter between the generated reader/builder and the plain structs, as `wire`.
 
-use fs_interfaces::types_capnp::{BasicType, edit};
+use crate::types_capnp::{BasicType, edit};
 
 use super::{Edit, FieldEdit};
 

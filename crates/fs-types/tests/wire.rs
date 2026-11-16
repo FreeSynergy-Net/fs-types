@@ -2,7 +2,7 @@
 
 use capnp::message::{Builder, ReaderOptions};
 use capnp::serialize;
-use fs_interfaces::types_capnp::type_catalog;
+use fs_types::types_capnp::type_catalog;
 use fs_types::{
     BasicType, CommandDescription, CommandKind, FieldDescription, TypeDescription, TypeRegistry,
 };

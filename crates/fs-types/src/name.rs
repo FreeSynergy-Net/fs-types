@@ -4,7 +4,7 @@
 //! "Ada Lovelace" into given and surname is a guess that is wrong for many names, so it is not done). The
 //! component kinds are the wire enum [`NameKind`].
 
-use fs_interfaces::types_capnp::{BasicType, NameKind};
+use crate::types_capnp::{BasicType, NameKind};
 use unicode_normalization::UnicodeNormalization;
 
 use crate::value::bad_char;

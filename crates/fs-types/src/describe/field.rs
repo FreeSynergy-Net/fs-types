@@ -2,7 +2,7 @@
 //!
 //! Pattern: Builder (`coding.md` §2) — `FieldDescription::new("emails", BasicType::Email).multiple().label("person.emails")`.
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 
 /// One field. Mirrors `FieldDescription` of `types.capnp`.
 #[derive(Clone, Debug, PartialEq, Eq)]

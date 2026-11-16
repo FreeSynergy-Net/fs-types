@@ -1,0 +1,28 @@
+# The gate on the Windows runner of fs-release (windows-2022): the pure-Rust crate is linted and tested here, never
+# cross-built. Own steps instead of the reusable check.yml: same flags as there, with --locked.
+name: windows
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: FreeSynergy/fs-release/actions/setup-rust@main
+        with:
+          components: rustfmt,clippy
+          cache-key: windows
+      - run: cargo fmt --check
+      - run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings -W clippy::pedantic
+      - run: cargo test --workspace --all-features --locked --no-fail-fast

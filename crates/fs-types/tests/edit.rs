@@ -4,7 +4,7 @@ mod support;
 
 use std::collections::BTreeMap;
 
-use fs_interfaces::types_capnp::type_catalog;
+use fs_types::types_capnp::type_catalog;
 use fs_types::{
     BasicRules, BasicType, CommandDescription, CommandKind, DescribesType, Edit, FieldDescription,
     RecordProblem, TypeDescription, TypeRegistry,
@@ -85,9 +85,9 @@ fn an_edit_travels_through_the_wire_form() {
         .set(&["emails"], BasicType::Email, &["a@x.org", "b@x.org"])
         .clear(&["kind"], BasicType::Choice);
     let mut msg = capnp::message::Builder::new_default();
-    e.write(msg.init_root::<fs_interfaces::types_capnp::edit::Builder<'_>>());
+    e.write(msg.init_root::<fs_types::types_capnp::edit::Builder<'_>>());
     let back = Edit::read(
-        msg.get_root_as_reader::<fs_interfaces::types_capnp::edit::Reader<'_>>()
+        msg.get_root_as_reader::<fs_types::types_capnp::edit::Reader<'_>>()
             .unwrap(),
     )
     .unwrap();

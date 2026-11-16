@@ -3,7 +3,7 @@
 //! Pattern: Value object. No standard beyond Unicode (UAX #15 NFC); the limits are ours and provisional:
 //! 4096 characters in a line, 65536 in a multi-line text.
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 use unicode_normalization::UnicodeNormalization;
 
 use crate::value::one_line;

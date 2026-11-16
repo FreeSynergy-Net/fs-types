@@ -1,4 +1,4 @@
-//! `PageCursor`, `Page`, `Capabilities`, `Problem`: what a topic call returns around its data.
+//! `PageCursor`, `Page`, `Problem`: what a topic call returns around its data.
 //!
 //! Pattern: Value object (plain results of a call). `PageCursor` is the opaque place to continue a list (the first
 //! topic crates call it `Place`; here that name belongs to the `geo:` point, see `place.rs`).
@@ -17,10 +17,6 @@ pub struct Page<T> {
     /// Where the next page starts; none at the end.
     pub next: Option<PageCursor>,
 }
-
-/// What a provider offers, per capability name (`event.create`, `person.read` …): `true` = offered.
-#[derive(Clone, Debug, Default)]
-pub struct Capabilities(pub Vec<(String, bool)>);
 
 /// One failed check at a field. `reason` is a code, never a sentence (ADR 0057).
 #[derive(Clone, Debug, PartialEq, Eq)]

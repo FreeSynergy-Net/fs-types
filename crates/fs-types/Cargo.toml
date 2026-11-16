@@ -1,25 +1,25 @@
 [package]
 name = "fs-types"
-description = "FreeSynergy basic types (e-mail, phone, name, address, place, date, language, link, image, key, choice, keywords, reference): check, normalise, suggest; the shared types of the topic crates (instant, wall-clock time, zone, person reference, attendee, contact address, object id, revision, media type, file, page); and the type description every program reports (ADR 0066)"
+description = "FreeSynergy basic types (e-mail, phone, name, address, place, date, language, link, image, key, choice, keywords, reference): check, normalise, suggest; the shared types of the topic crates (instant, wall-clock time, zone, person reference, attendee, contact address, object id, revision, media type, file, page); the type description every program reports (ADR 0066); and the Cap'n Proto schema of all of it"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
-
-[features]
-# `TypeCatalog` server over a `TypeRegistry` (Cap'n Proto RPC); contracts alone do not need the runtime.
-rpc = ["dep:capnp-rpc"]
+include = ["src/**", "schema/**", "tests/**", "examples/**", "DESIGN.md"]
 
 [dependencies]
 capnp = "0.27"
-capnp-rpc = { version = "0.27", optional = true }
-fs-interfaces = { path = "../fs-interfaces", features = ["values"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 geo-uri = "0.2"
+idna = "1"
 iri-string = { version = "0.7", features = ["alloc"] }
 oxilangtag = "0.1"
 unicode-normalization = "0.1"
 
 [dev-dependencies]
-tokio = { version = "1", features = ["rt", "macros"] }
+# Our own pure-Rust schema compiler (ADR 0040) regenerates the committed code ...
+capnp-compiler = { git = "https://github.com/FreeSynergy/fs-capnpc", tag = "v0.0.1" }
+capnpc = "0.27"
+# ... and the official compiler (as WASM) is the oracle in tests/generated_matches_official.rs.
+capnpc-embedded = "0.2"

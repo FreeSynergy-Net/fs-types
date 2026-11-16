@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-use fs_interfaces::types_capnp::{BasicType, CommandKind};
+use crate::types_capnp::{BasicType, CommandKind};
 
 use super::{DescriptionProblem as P, FieldDescription, TypeDescription};
 

@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 use unicode_normalization::UnicodeNormalization;
 
 use crate::{BasicValue, TypeProblem};

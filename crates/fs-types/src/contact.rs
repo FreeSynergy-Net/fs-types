@@ -6,8 +6,8 @@
 
 use std::collections::HashMap;
 
-use fs_interfaces::types_capnp::BasicType;
-use fs_interfaces::values::{ContactValue, EmailAddress, PhoneNumber};
+use crate::types_capnp::BasicType;
+use crate::values::{ContactValue, EmailAddress, PhoneNumber};
 
 use crate::{BasicValue, TypeProblem};
 

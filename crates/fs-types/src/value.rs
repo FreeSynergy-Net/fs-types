@@ -4,7 +4,7 @@
 //! `canonical`; `check` and the default `suggest` come with the trait. Trait first (ADR 0043): a program or a form
 //! depends on this trait or on the [`crate::Rule`] registry, never on a concrete type.
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 
 use crate::TypeProblem;
 

@@ -3,7 +3,7 @@
 //! Pattern: Value object over the link rules of `iri`. The media type is never guessed from the file name; typed as one line it is a
 //! link only (media type empty, "not known"). Reading the pixels of the file is not the job of a basic type.
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 
 use crate::iri::{UNSAFE_FOR_IMAGE, checked, normalized};
 use crate::{BasicValue, TypeProblem};

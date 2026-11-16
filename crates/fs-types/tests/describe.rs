@@ -83,7 +83,7 @@ fn a_record_is_checked_by_the_rules_of_its_fields() {
                 "emails",
                 1,
                 RecordProblem::Value(TypeProblem::Contact(
-                    fs_interfaces::values::ValueProblem::MissingAt
+                    fs_types::values::ValueProblem::MissingAt
                 ))
             ),
             issue("kind", 0, RecordProblem::NotMultiple),

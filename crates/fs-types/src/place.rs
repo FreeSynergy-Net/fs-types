@@ -6,7 +6,7 @@
 //! coordinate system RFC 5870 defines). Shapes (`GeoJSON` lines and areas) are `Unsupported` here (DESIGN.md). The named
 //! wrapper (name, address, links) is [`crate::Location`].
 
-use fs_interfaces::types_capnp::BasicType;
+use crate::types_capnp::BasicType;
 
 use crate::{BasicValue, GeoPoint, TypeProblem};
 

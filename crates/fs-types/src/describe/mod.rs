@@ -13,17 +13,12 @@ mod type_description;
 mod validate;
 mod wire;
 
-#[cfg(feature = "rpc")]
-mod server;
-
+pub use crate::types_capnp::CommandKind;
 pub use check::{RecordIssue, RecordProblem};
 pub use command::CommandDescription;
 pub use describes::DescribesType;
 pub use edit::{Edit, FieldEdit};
 pub use field::FieldDescription;
-pub use fs_interfaces::types_capnp::CommandKind;
 pub use problem::DescriptionProblem;
 pub use registry::TypeRegistry;
-#[cfg(feature = "rpc")]
-pub use server::CatalogServer;
 pub use type_description::TypeDescription;

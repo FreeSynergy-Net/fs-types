@@ -1,29 +1,32 @@
 # fs-types - Design
 
-The basic types of ADR 0066 and the type description every program reports. Wire form: `schema/types.capnp` (this repo).
+The basic types of ADR 0066 and the type description every program reports. Wire form: `crates/fs-types/schema/types.capnp` (this repo).
 
 ## Where it lives, and why (`coding.md` §4, §8)
 
-A workspace crate of `fs-interfaces`, next to `fs-mcp`, not a repository of its own. Reasons: (1) `coding.md` §8 lets repos depend only by tag, and the rules here belong to the contract in `types.capnp`; one tag moves both, so schema and rules cannot drift apart. (2) `fs-interfaces` already holds `values::{EmailAddress, PhoneNumber}`, the first two basic types; they stay where they are (programs use them since before this crate) and `fs-types` adds them to its registry by an Adapter instead of copying them (`coding.md` §4). (3) A new repository means a new GitHub repository, which is outward-facing and not part of this round; it can be split off later by moving the crate (consumers name the crate, not the path). A consumer writes `fs-types = { git = "https://github.com/FreeSynergy/fs-interfaces", tag = "v0.0.N" }`. `fs-interfaces` itself does not depend on `fs-types`.
+Its own repository `fs-types`, the lowest library of the family: it depends on no FreeSynergy repository, only on free crates (`capnp`, `chrono`, `idna`, `iri-string`, `geo-uri`, `oxilangtag`, `unicode-normalization`). Up to `fs-interfaces` v0.0.26 it was a crate inside the repository `fs-interfaces`, and the schema `types.capnp` and the contact values (`values`) lived there; that bound the value objects to the topic contracts the wrong way round. Here the schema, its generated code (`src/types_capnp.rs`, committed, ADR 0040), the contact values and the rules are one crate with one tag, so they cannot drift apart. The decision is ADR 0093 (draft, not yet accepted). A consumer writes `fs-types = { git = "https://github.com/FreeSynergy/fs-types", tag = "v0.0.N" }`; a crate with its own schemas that import `types.capnp` reads the schema folder from the pinned checkout through `SCHEMA_DIR` (README, "Using the schema").
+
+Not here: the `TypeCatalog` server (transport, goes to `fs-rpc`), the provider rule with its `Capabilities` report (stays in `fs-interfaces`), the topic schemas.
 
 ## Pattern map
 
 | Part | Pattern | Why |
 |---|---|---|
 | `BasicValue` and one file per kind (`text`, `contact`, `language`, `iri`, `datetime`, `place`, `key`, `keywords`, `name`, `address`, `image`, `choice`) | Value object + Template method (`parse`/`canonical` per type, `check`/`suggest` provided) | valid on construction, equal values have equal canonical text; the trait is the interface (ADR 0043) |
-| `moment` (`Utc`, `LocalDateTime`, `Zone`), `person` (`PersonRef`, `Attendee`, `ContactAddress`), `ids` (`ObjectId`, `Revision`, `MediaType`, `FileRef`), `paging` (`PageCursor`, `Page`, `Capabilities`, `Problem`) | Value object (no `BasicType` kind, so not `BasicValue`) | the types the topic crates share (ADR 0085); `TypeProblem` is the union of their stand-ins |
-| `language`, `iri`, `datetime`, `place`, `contact` | Adapter over a free crate (`oxilangtag`, `iri-string`, `chrono`, `geo-uri`, `fs-interfaces::values`) | do not rebuild what exists (ADR 0015, `coding.md` §4) |
+| `moment` (`Utc`, `LocalDateTime`, `Zone`), `person` (`PersonRef`, `Attendee`, `ContactAddress`), `ids` (`ObjectId`, `Revision`, `MediaType`, `FileRef`), `paging` (`PageCursor`, `Page`, `Problem`) | Value object (no `BasicType` kind, so not `BasicValue`) | the types the topic crates share (ADR 0085); `TypeProblem` is the union of their stand-ins |
+| `language`, `iri`, `datetime`, `place`, `contact` | Adapter over a free crate (`oxilangtag`, `iri-string`, `chrono`, `geo-uri`, `idna`) | do not rebuild what exists (ADR 0015, `coding.md` §4) |
 | `rule.rs` `Rule`, `BasicRules` | Registry of Strategy objects | a generated frontend knows only a field's `BasicType`; it reaches check/normalise/suggest by kind |
 | `describe/` `FieldDescription`, `CommandDescription`, `TypeDescription` | Value object + Builder | read from a program, written by chaining |
 | `describe/describes.rs` `DescribesType` | Registry entry point (trait first) | a program lists each data type it owns |
 | `describe/registry.rs` | Registry | name to description, validated on the way in |
 | `describe/validate.rs`, `check.rs` | Template method | one flow for all programs: the admin frontend and a program's own `check` command say the same |
-| `describe/wire.rs`, `describe/server.rs` (feature `rpc`) | Adapter | generated capnp types to plain structs, and `TypeCatalog.describe` over a registry |
+| `describe/wire.rs` | Adapter | generated capnp types to plain structs and back |
+| `values/` (`EmailAddress`, `PhoneNumber`, `ValueProblem`, trait `ContactValue`) | Value object + Template method | valid on construction, small, immutable, compared by value |
 
 ## Decisions (provisional, marked for the strategy)
 
 * Kinds in this version: the thirteen of the task list plus `text` and `multilineText`. `onlineService`, `timeZone`, `duration`, `recurrence`, `quantity`, `money`, `colour`, `sound`, `video`, formatted text are in `map.md` and are appended to `BasicType` later (append only; a reader meeting a newer kind treats the field as plain text).
-* Canonical forms: e-mail as `fs-interfaces` makes it; phone `+<digits>`; language RFC 5646 case; link with a host (`//`) normalised by RFC 3986 syntax rules (scheme and host lower case, dot segments removed, percent codes of unreserved characters decoded and hex digits upper case), link without a host (`mailto:`, `urn:`, `tel:`) only the scheme in lower case; reference kept as written (an identity); date `YYYY-MM-DD`; date-time with offset, `Z` for UTC (two date-times are equal only if instant and offset are; `-00:00`, "offset unknown", is refused); place as `geo:` URI; fingerprint bare upper-case hex; keywords lower case, sorted, `, `-joined.
+* Canonical forms: e-mail as `values::EmailAddress` makes it; phone `+<digits>`; language RFC 5646 case; link with a host (`//`) normalised by RFC 3986 syntax rules (scheme and host lower case, dot segments removed, percent codes of unreserved characters decoded and hex digits upper case), link without a host (`mailto:`, `urn:`, `tel:`) only the scheme in lower case; reference kept as written (an identity); date `YYYY-MM-DD`; date-time with offset, `Z` for UTC (two date-times are equal only if instant and offset are; `-00:00`, "offset unknown", is refused); place as `geo:` URI; fingerprint bare upper-case hex; keywords lower case, sorted, `, `-joined.
 * Limits (ours, provisional): text 4096 chars, multi-line 65536, URI 2048 bytes, keyword 64 chars and 256 per set, name/address parts 1024 chars.
 * Unsafe schemes (provisional): a `Link` may not use `javascript:`, `vbscript:` or `data:`, an `Image` not `javascript:` or `vbscript:` (a frontend may make them clickable); `TypeProblem::UnsafeScheme`. Characters refused in every text: control characters, U+2028/U+2029 and the bidirectional overrides and isolates; multi-line texts and `Address.full` keep `\n`.
 * `Reference` has no scheme block (an id is an identity, not a target to open); a frontend must not make references clickable by scheme alone, it shows the target's compact component. A reference target in a description is a bare type name (UpperCamel), no program prefix.
@@ -56,7 +59,7 @@ Candidate `calcard` 0.3.14 (Stalwart Labs; `Apache-2.0 OR MIT`; first released 2
 | `types.capnp` draft 0.1: `BasicType` (17 values), `Name`, `Address`, `Image` and their kinds, type description (`FieldDescription`, `CommandDescription`, `TypeDescription`, `CommandKind`), `TypeCatalog.describe` | done, draft |
 | Rules for all 16 kinds: check, normalise (suggest where it makes sense: e-mail domains, language, link scheme, reference, keywords, choice) | done, tested (each kind, incl. the cases the independent review found) |
 | `BasicRules` registry, unknown kind as text | done, tested |
-| Description: builders, validation, registry, record check, wire round trip, `CatalogServer` (feature `rpc`) | done, tested (incl. a real RPC call) |
+| Description: builders, validation, registry, record check, wire round trip | done, tested (the `CatalogServer` moved to `fs-rpc`) |
 
 ## Unsupported (named, not faked)
 

@@ -1,4 +1,4 @@
-//! FreeSynergy basic types and type descriptions (ADR 0066, schema `types.capnp` in `fs-interfaces`).
+//! FreeSynergy basic types and type descriptions (ADR 0066, schema `schema/types.capnp` in this crate).
 //!
 //! * Basic types: [`BasicValue`] with one value object per kind ([`Text`], [`EmailAddress`], [`Name`], [`Address`],
 //!   [`Place`], [`Date`], [`Language`], [`Link`], [`Image`], [`Key`], [`Choice`], [`Keywords`], [`Reference`] …): they
@@ -8,15 +8,28 @@
 //!
 //! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`PersonArt`], [`Attendee`],
 //!   [`ContactAddress`], [`ObjectId`], [`Revision`], [`MediaType`], [`FileRef`], [`Page`], [`PageCursor`],
-//!   [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
+//!   [`Problem`] (DESIGN.md, "Shared types").
 //! * Positions (v0.0.24): [`GeoPoint`] (the coordinate), [`PositionFix`] with [`FixSource`] and [`AccuracyLevel`] (origin, time, blur).
 //! * Named place (v0.0.25): [`Location`] (JSCalendar `Location`: optional name, description, types, coordinates, relativeTo, timeZone, address, links) with [`LocationParts`].
+//!
+//! * Contact values: [`values`] ([`EmailAddress`], [`PhoneNumber`], [`ValueProblem`], trait [`ContactValue`]), valid on construction.
+//! * Wire form: [`types_capnp`] (generated, committed; ADR 0040); [`SCHEMA_DIR`] is where the schema file lives, for crates that import it.
 //!
 //! Pattern: Registry (rules by kind, descriptions by name), Value object, Adapter (to the free crates and to the wire
 //! form). Where it lives and why: `DESIGN.md`.
 
 #![deny(missing_docs)]
 #![warn(clippy::pedantic)]
+
+/// The directory that holds `types.capnp` in this crate's source tree (a dependent crate that reads this crate from a
+/// git checkout gets the path of that checkout). Use it as the import path of a schema compiler, with
+/// `import "/types.capnp"` in the schema that needs the basic types. See the README, "Using the schema".
+pub const SCHEMA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/schema");
+
+#[rustfmt::skip]
+#[allow(clippy::all, clippy::pedantic, unused_parens, dead_code, missing_docs)]
+pub mod types_capnp;
+pub mod values;
 
 mod address;
 mod choice;
@@ -51,8 +64,6 @@ pub use describe::{
     FieldEdit, RecordIssue, RecordProblem, TypeDescription, TypeRegistry,
 };
 pub use fix::{AccuracyLevel, FixSource, PositionFix};
-pub use fs_interfaces::types_capnp::{AddressKind, BasicType, NameKind};
-pub use fs_interfaces::values::{EmailAddress, PhoneNumber};
 pub use geo::GeoPoint;
 pub use ids::{FileRef, MediaType, ObjectId, Revision};
 pub use image::Image;
@@ -64,10 +75,12 @@ pub use location::{Location, RelativeTo};
 pub use location_parts::LocationParts;
 pub use moment::{LocalDateTime, Utc, Zone, ZoneKind};
 pub use name::Name;
-pub use paging::{Capabilities, Page, PageCursor, Problem};
+pub use paging::{Page, PageCursor, Problem};
 pub use person::{Attendee, ContactAddress, PersonArt, PersonRef};
 pub use place::Place;
 pub use problem::TypeProblem;
 pub use rule::{BasicRules, Rule};
 pub use text::{MultilineText, Text};
+pub use types_capnp::{AddressKind, BasicType, NameKind};
 pub use value::BasicValue;
+pub use values::{ContactValue, EmailAddress, PhoneNumber, ValueProblem};

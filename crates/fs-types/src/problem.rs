@@ -9,7 +9,7 @@
 //! [`TypeProblem::NotAbsolute`] for a text that is no absolute IRI) and `BadUrl` ([`TypeProblem::BadUri`]); going back,
 //! each stand-in reads every value it has a name for and nothing else (DESIGN.md, "Shared types").
 
-use fs_interfaces::values::ValueProblem;
+use crate::values::ValueProblem;
 
 /// Why typed text is not (yet) a value. The variants are stable codes for the words of a program.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

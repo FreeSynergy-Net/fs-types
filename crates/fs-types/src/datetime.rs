@@ -4,8 +4,8 @@
 //! instant with its offset. The date-time without offset (JSCalendar `LocalDateTime`), the instant in UTC and the
 //! time zone are `moment.rs`; whether an IANA name exists is the tz database's to say (not checked here, DESIGN.md).
 
+use crate::types_capnp::BasicType;
 use chrono::{DateTime as ChronoDateTime, Datelike, NaiveDate, SecondsFormat};
-use fs_interfaces::types_capnp::BasicType;
 
 use crate::{BasicValue, TypeProblem};
 
