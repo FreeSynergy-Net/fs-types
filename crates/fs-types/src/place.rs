@@ -9,7 +9,7 @@ use std::str::FromStr;
 use fs_interfaces::types_capnp::BasicType;
 use geo_uri::GeoUri;
 
-use crate::{BasicValue, TypeProblem};
+use crate::{BasicValue, GeoPoint, TypeProblem};
 
 /// A point on Earth: `geo:48.2010,16.3695` with optional altitude and uncertainty.
 #[derive(Clone, Debug, PartialEq)]
@@ -26,6 +26,28 @@ impl Place {
     #[must_use]
     pub fn longitude(&self) -> f64 {
         self.0.longitude()
+    }
+}
+
+impl Place {
+    /// The coordinate of this place as a [`GeoPoint`] (height and uncertainty kept).
+    ///
+    /// # Errors
+    /// `OutOfRange` if the stored numbers are not finite (a `geo:` text such as `geo:nan,0`).
+    pub fn point(&self) -> Result<GeoPoint, TypeProblem> {
+        GeoPoint::new(
+            self.0.latitude(),
+            self.0.longitude(),
+            self.0.altitude(),
+            self.0.uncertainty(),
+        )
+    }
+
+    /// The place for a [`GeoPoint`]; no name, no address (the wrapper with those is planned, see DESIGN.md v0.0.24).
+    #[must_use]
+    pub fn from_point(point: &GeoPoint) -> Self {
+        // A GeoPoint is valid, so its own text always reads back.
+        Self::parse(&point.to_geo_uri()).unwrap_or_else(|_| unreachable!("valid GeoPoint"))
     }
 }
 

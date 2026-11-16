@@ -9,6 +9,7 @@
 //! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`PersonArt`], [`Attendee`],
 //!   [`ContactAddress`], [`ObjectId`], [`Revision`], [`MediaType`], [`FileRef`], [`Page`], [`PageCursor`],
 //!   [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
+//! * Positions (v0.0.24): [`GeoPoint`] (the coordinate), [`PositionFix`] with [`FixSource`] and [`AccuracyLevel`] (origin, time, blur).
 //!
 //! Pattern: Registry (rules by kind, descriptions by name), Value object, Adapter (to the free crates and to the wire
 //! form). Where it lives and why: `DESIGN.md`.
@@ -21,6 +22,8 @@ mod choice;
 mod contact;
 mod datetime;
 pub mod describe;
+mod fix;
+mod geo;
 mod ids;
 mod image;
 mod iri;
@@ -44,8 +47,10 @@ pub use describe::{
     CommandDescription, CommandKind, DescribesType, DescriptionProblem, Edit, FieldDescription,
     FieldEdit, RecordIssue, RecordProblem, TypeDescription, TypeRegistry,
 };
+pub use fix::{AccuracyLevel, FixSource, PositionFix};
 pub use fs_interfaces::types_capnp::{AddressKind, BasicType, NameKind};
 pub use fs_interfaces::values::{EmailAddress, PhoneNumber};
+pub use geo::GeoPoint;
 pub use ids::{FileRef, MediaType, ObjectId, Revision};
 pub use image::Image;
 pub use iri::{Link, Reference};
