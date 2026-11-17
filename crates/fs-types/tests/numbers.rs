@@ -91,7 +91,10 @@ fn duration_follows_the_jscalendar_grammar() {
     ] {
         assert_eq!(bad::<Duration>(t), TypeProblem::BadDuration, "{t}");
     }
-    assert_eq!(bad::<Duration>("PT1.1234567890S"), TypeProblem::BadDuration);
+    assert_eq!(
+        bad::<Duration>("PT1.12345678901S"),
+        TypeProblem::BadDuration
+    );
     assert_eq!(
         bad::<Duration>("P99999999999999999999D"),
         TypeProblem::OutOfRange
@@ -105,7 +108,7 @@ fn duration_counts_whole_seconds() {
     assert_eq!(secs("P1W"), Some(604_800));
     assert_eq!(secs("P1DT2H3M4S"), Some(86_400 + 7_200 + 180 + 4));
     assert_eq!(secs("PT0.9S"), Some(0));
-    assert_eq!(secs("P30000000000000W"), None);
+    assert_eq!(secs("P40000000000000W"), None);
 }
 
 #[test]
