@@ -1,33 +1,39 @@
-//! Reading of [`MemoryRecords`]: checks, filter, sort, page, projection. The rules are the trait's (draft §4.3); the double
-//! compares date and date-time texts as texts (a real provider compares instants).
+//! Reading of [`MemoryRecords`]: checks, filter tree (`memory_filter.rs`), sort, page (`position` or cursor, `total`),
+//! projection. The rules are the trait's (draft §3.4, Nachzug §14). Records she may not read are dropped FIRST: they are never
+//! counted, take no index and never move another record's place.
 //!
 //! Pattern: pure functions over the double's state.
 
 use std::cmp::Ordering;
 
-use fs_types::{BasicType, FieldDescription, PageCursor};
+use fs_types::{FieldDescription, PageCursor};
 
 use super::codes::{RecordsCode, keys};
 use super::memory::{Flaw, MemoryRecords};
+use super::memory_filter::{choice_check, eval, rank};
 use super::memory_row::Row;
 use super::memory_view::{readable, view};
 use super::query::{Condition, RecordQuery, SortBy};
+use super::search::SearchKind;
 use super::shape::Group;
-use super::view::{RecordPage, RecordView};
+use super::view::{EstimateKind, RecordPage, RecordView};
 use crate::coded::Coded;
 
 type Found<T> = Result<T, Coded<RecordsCode>>;
 
 pub(super) fn find(m: &MemoryRecords, q: &RecordQuery) -> Found<RecordPage> {
     m.type_check(&q.data_type)?;
-    if !m.has(Flaw::SizeUnchecked) {
-        m.limits.check_query(q)?;
-    }
+    admit_query(m, q)?;
     let sort_paths = q.sort.iter().filter_map(|s| match &s.by {
         SortBy::Field(p) => Some(p.as_slice()),
         SortBy::Order(_) => None,
     });
-    let cond_paths = q.conditions.iter().filter_map(Condition::path);
+    let leaves: Vec<&Condition> = q
+        .filter
+        .as_ref()
+        .map(|f| f.conditions())
+        .unwrap_or_default();
+    let cond_paths = leaves.iter().filter_map(|c| c.path());
     for p in cond_paths
         .chain(sort_paths)
         .chain(q.fields.iter().map(Vec::as_slice))
@@ -41,29 +47,31 @@ pub(super) fn find(m: &MemoryRecords, q: &RecordQuery) -> Found<RecordPage> {
             return Err(Coded::new(RecordsCode::UnknownOrder).with_text(keys::ORDER, name.as_str()));
         }
     }
-    for c in &q.conditions {
-        choice_check(m, c)?;
+    for c in &leaves {
+        choice_check(c.path().and_then(|p| field(m, p).ok().flatten()), c)?;
     }
     let grouping = match &q.group {
         None => None,
         Some(g) => Some(m.grouping(g)?),
     };
     let rows = m.rows.borrow();
+    let matches = |r: &Row| {
+        (q.scope.is_none() || r.scope == q.scope)
+            && (m.has(Flaw::ConditionsIgnored) || q.filter.as_ref().is_none_or(|f| eval(m, r, f)))
+    };
     let mut hits: Vec<(usize, &Row)> = rows
         .iter()
         .enumerate()
-        .filter(|(_, r)| visible(m, r) && (q.scope.is_none() || r.scope == q.scope))
-        .filter(|(_, r)| {
-            m.has(Flaw::ConditionsIgnored) || q.conditions.iter().all(|c| holds(m, r, c))
-        })
+        .filter(|(_, r)| visible(m, r) && matches(r))
         .collect();
     hits.sort_by(|a, b| compare(m, q, *a, *b));
-    let start = match (&q.after, m.has(Flaw::CursorIgnored)) {
-        (Some(c), false) => {
+    let start = match (&q.after, q.position, m.has(Flaw::CursorIgnored)) {
+        (Some(c), _, false) => {
             c.0.strip_prefix("m:")
                 .and_then(|n| n.parse::<usize>().ok())
                 .ok_or_else(|| Coded::new(RecordsCode::CursorInvalid))?
         }
+        (None, Some(p), _) => p as usize,
         _ => 0,
     };
     let end = start.saturating_add(q.size as usize).min(hits.len());
@@ -74,7 +82,55 @@ pub(super) fn find(m: &MemoryRecords, q: &RecordQuery) -> Found<RecordPage> {
         .map(|(_, r)| view(m, r, &q.fields, grouping))
         .collect();
     let next = (end < hits.len()).then(|| PageCursor(format!("m:{end}")));
-    Ok(RecordPage { items, next })
+    let hidden_too = if m.has(Flaw::TotalCountsUnreadable) {
+        rows.iter().filter(|r| !visible(m, r) && matches(r)).count()
+    } else {
+        0
+    };
+    let total = Some((hits.len() + hidden_too) as u64);
+    let position = u32::try_from(start).unwrap_or(u32::MAX);
+    let (total_estimated, estimate_kind) = if m.has(Flaw::EstimateAsExact) {
+        (total, Some(EstimateKind::Approximate))
+    } else {
+        (None, None)
+    };
+    let state = m.state();
+    Ok(RecordPage {
+        items,
+        next,
+        position,
+        total,
+        state,
+        complete: true,
+        total_estimated,
+        estimate_kind,
+        snippets: Vec::new(),
+    })
+}
+
+/// The checks before any record is read: the limits of the double, the search kind and its policy.
+fn admit_query(m: &MemoryRecords, q: &RecordQuery) -> Found<()> {
+    if !m.has(Flaw::SizeUnchecked) {
+        let mut limits = m.limits;
+        if m.has(Flaw::DepthUnchecked) {
+            limits.filter_depth_max = usize::MAX;
+            limits.filter_nodes_max = usize::MAX;
+        }
+        limits.check_query(q)?;
+    }
+    if m.has(Flaw::RelevantBeforePolicy) && q.search == Some(SearchKind::Relevant) {
+        return Err(Coded::new(RecordsCode::Unsupported).with_text(keys::WHAT, "relevant"));
+    }
+    let kind = if m.has(Flaw::SearchKindIgnored) {
+        q.search.unwrap_or(SearchKind::Complete)
+    } else {
+        m.shape.search.choose(q.search)?
+    };
+    if kind == SearchKind::Relevant {
+        // Nachzug 2: the double computes no relevance (that is the relevance module / fs-search).
+        return Err(Coded::new(RecordsCode::Unsupported).with_text(keys::WHAT, "relevant"));
+    }
+    Ok(())
 }
 
 pub(super) fn get(
@@ -129,81 +185,6 @@ fn field<'a>(m: &'a MemoryRecords, path: &[String]) -> Found<Option<&'a FieldDes
         None => Err(Coded::new(RecordsCode::UnknownField)
             .with_text(keys::TYPE, m.description.name.as_str())
             .with_text(keys::PATH, path.join("/"))),
-    }
-}
-
-/// A choice value must be one of the keys.
-fn choice_check(m: &MemoryRecords, c: &Condition) -> Found<()> {
-    let values: Vec<&String> = match c {
-        Condition::Equals { value, .. } => vec![value],
-        Condition::AnyOf { values, .. } => values.iter().collect(),
-        _ => Vec::new(),
-    };
-    let Some(f) = c.path().and_then(|p| field(m, p).ok().flatten()) else {
-        return Ok(());
-    };
-    match values
-        .iter()
-        .find(|v| f.basic == BasicType::Choice && !f.choices.contains(v))
-    {
-        Some(_) => Err(Coded::new(RecordsCode::ValueMismatch)
-            .with_text(keys::PATH, f.name.as_str())
-            .with_text(keys::BASIC, "choice")),
-        None => Ok(()),
-    }
-}
-
-/// The first step of a path (v1 paths have one).
-fn head(p: &[String]) -> &str {
-    p.first().map_or("", String::as_str)
-}
-
-fn holds(m: &MemoryRecords, r: &Row, c: &Condition) -> bool {
-    let first = head;
-    match c {
-        Condition::Equals { path, value } => readable(r, first(path)).contains(value),
-        Condition::AnyOf { path, values } => {
-            readable(r, first(path)).iter().any(|v| values.contains(v))
-        }
-        Condition::IsEmpty { path } => {
-            !r.hidden.iter().any(|h| h == first(path)) && readable(r, first(path)).is_empty()
-        }
-        Condition::Range { path, from, to } => readable(r, first(path)).first().is_some_and(|v| {
-            let low = from
-                .as_ref()
-                .is_none_or(|f| rank(m, path, f, v) != Ordering::Greater);
-            let high = to
-                .as_ref()
-                .is_none_or(|t| rank(m, path, v, t) != Ordering::Greater);
-            low && high
-        }),
-        Condition::Term(t) => {
-            let t = t.to_lowercase();
-            m.description
-                .fields
-                .iter()
-                .filter(|f| matches!(f.basic, BasicType::Text | BasicType::MultilineText))
-                .any(|f| {
-                    readable(r, &f.name)
-                        .iter()
-                        .any(|v| v.to_lowercase().contains(&t))
-                })
-        }
-    }
-}
-
-/// Order of two values of a field: a choice in list order, everything else as text.
-fn rank(m: &MemoryRecords, path: &[String], a: &str, b: &str) -> Ordering {
-    let choices = path
-        .first()
-        .and_then(|f| m.description.find_field(f))
-        .filter(|f| f.basic == BasicType::Choice);
-    match choices {
-        Some(f) => {
-            let at = |v: &str| f.choices.iter().position(|c| c == v).unwrap_or(usize::MAX);
-            at(a).cmp(&at(b))
-        }
-        None => a.cmp(b),
     }
 }
 

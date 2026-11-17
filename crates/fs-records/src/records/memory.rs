@@ -17,6 +17,7 @@ use super::limits::Limits;
 use super::memory_find;
 use super::memory_row::Row;
 use super::query::path;
+use super::search::QueryChanges;
 use super::shape::{Group, GroupSet, GroupingDescription, Shape};
 use crate::coded::Coded;
 
@@ -49,6 +50,24 @@ pub enum Flaw {
     ShapeLies,
     /// Records the person may not read are answered.
     UnreadableShown,
+    /// Nachzug 17.11.: `XOR` as odd parity instead of exactly one.
+    XorParity,
+    /// Nachzug: `NOT` dropped (its operands count as `OR`).
+    NotDropped,
+    /// Nachzug: filter depth and node limits not checked.
+    DepthUnchecked,
+    /// Nachzug: `total` counts records she may not read.
+    TotalCountsUnreadable,
+    /// Nachzug: conditions see the values of hidden fields.
+    HiddenFilterSees,
+    /// Nachzug (Suche-Arten): a search kind outside the allowed ones is taken.
+    SearchKindIgnored,
+    /// Nachzug: the query state never changes.
+    StateFrozen,
+    /// Nachzug 2: the exact total is also given as estimate (estimate shown as exact).
+    EstimateAsExact,
+    /// Nachzug 2: `relevant` is answered as unsupported before the policy is asked.
+    RelevantBeforePolicy,
 }
 
 /// One data type in memory.
@@ -99,6 +118,14 @@ impl MemoryRecords {
     /// Switches a wrong behaviour on.
     pub fn flaw(&self, flaw: Flaw) {
         self.flaws.borrow_mut().push(flaw);
+    }
+    /// The query state: the generation as text (the double has one state for every query).
+    pub(super) fn state(&self) -> String {
+        if self.has(Flaw::StateFrozen) {
+            "g:0".into()
+        } else {
+            format!("g:{}", self.generation.get())
+        }
     }
     pub(super) fn has(&self, flaw: Flaw) -> bool {
         self.flaws.borrow().contains(&flaw)
@@ -194,5 +221,25 @@ impl Records for MemoryRecords {
             self.generation.get()
         };
         Box::pin(ready(self.type_check(data_type).map(|()| now)))
+    }
+    fn changes(
+        &self,
+        query: &super::query::RecordQuery,
+        since_state: &str,
+    ) -> Pending<'_, QueryChanges> {
+        let out = memory_find::find(self, query).and_then(|page| {
+            if page.state != since_state {
+                return Err(Coded::new(RecordsCode::CannotCalculateChanges));
+            }
+            let (old_state, new_state) = (since_state.to_owned(), page.state);
+            Ok(QueryChanges {
+                old_state,
+                new_state,
+                removed: Vec::new(),
+                added: Vec::new(),
+                total: page.total,
+            })
+        });
+        Box::pin(ready(out))
     }
 }

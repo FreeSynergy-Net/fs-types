@@ -1,4 +1,5 @@
-//! What a host asks: one data type, a scope, conditions (AND), sort keys, an optional grouping, the fields it shows, a page.
+//! What a host asks: one data type, a scope, a filter tree (Nachzug 17.11.: JMAP `/query`, [`Filter`]), sort keys, an
+//! optional grouping, the fields it shows, a page (`position` or cursor, and `size` = JMAP `limit`).
 //!
 //! Closed forms only (ADR 0087 Nachtrag points 5, 12): no expression, no query language. Values are canonical texts of the
 //! field's basic type (as `fs_types::FieldEdit::values`), never JSON.
@@ -7,7 +8,12 @@
 
 use fs_types::PageCursor;
 
-/// One condition on one field (top-level path in v1). All conditions of a query must hold.
+use super::filter::Filter;
+use super::search::SearchKind;
+
+/// One condition on one field (top-level path in v1): a leaf of the [`Filter`] tree (JMAP `FilterCondition`). On a field the
+/// person may not read it is FALSE whatever the value (Nachzug: a hidden value never changes a result; under `Not` the
+/// leaf stays false, so the result does not depend on the value either).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Condition {
     /// The field holds this value (for a `multiple` field: among its values).
@@ -82,8 +88,8 @@ pub struct RecordQuery {
     pub data_type: String,
     /// The container record (a task list) as its id; `None` = all the person may see.
     pub scope: Option<String>,
-    /// All must hold.
-    pub conditions: Vec<Condition>,
+    /// The filter tree; `None` = every record (Nachzug 17.11.; replaces the flat AND list of the first draft).
+    pub filter: Option<Filter>,
     /// In order; ties by id.
     pub sort: Vec<Sort>,
     /// A grouping of the shape: every record of the page then carries its group key.
@@ -92,8 +98,13 @@ pub struct RecordQuery {
     pub fields: Vec<Vec<String>>,
     /// Where the page starts: `None` = at the beginning; otherwise the `next` of the page before, with the same query.
     pub after: Option<PageCursor>,
+    /// Nachzug: JMAP `position`, the 0-based index in the VISIBLE result (records she may not read take no index);
+    /// together with `after` it is `position-with-cursor`.
+    pub position: Option<u32>,
     /// At most this many records (1 ..= the limit).
     pub size: u32,
+    /// Nachzug: the search kind asked; `None` = the type's default; outside the allowed ones = `search-kind-refused`.
+    pub search: Option<SearchKind>,
 }
 
 impl RecordQuery {
@@ -103,12 +114,14 @@ impl RecordQuery {
         Self {
             data_type: data_type.to_owned(),
             scope: None,
-            conditions: Vec::new(),
+            filter: None,
             sort: Vec::new(),
             group: None,
             fields: Vec::new(),
             after: None,
+            position: None,
             size,
+            search: None,
         }
     }
 
@@ -119,10 +132,26 @@ impl RecordQuery {
         self
     }
 
-    /// One more condition.
+    /// One more condition, AND-ed to the tree.
     #[must_use]
-    pub fn when(mut self, condition: Condition) -> Self {
-        self.conditions.push(condition);
+    pub fn when(self, condition: Condition) -> Self {
+        self.filtered(Filter::Is(condition))
+    }
+
+    /// One more filter, AND-ed to the tree.
+    #[must_use]
+    pub fn filtered(mut self, filter: Filter) -> Self {
+        self.filter = Some(match self.filter.take() {
+            None => filter,
+            Some(f) => f.and(filter),
+        });
+        self
+    }
+
+    /// Start at this index of the visible result (JMAP `position`).
+    #[must_use]
+    pub fn at(mut self, position: u32) -> Self {
+        self.position = Some(position);
         self
     }
 

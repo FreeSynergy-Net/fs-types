@@ -6,6 +6,8 @@
 //!
 //! Pattern: Value objects.
 
+use super::search::SearchPolicy;
+
 /// One way to group the records of a type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GroupingDescription {
@@ -42,6 +44,8 @@ pub struct Shape {
     pub groupings: Vec<GroupingDescription>,
     /// Its orders.
     pub orders: Vec<OrderDescription>,
+    /// Nachzug 17.11.: the search kinds it allows and its default (wire: `TypeDescription.searchKinds/searchDefault`).
+    pub search: SearchPolicy,
 }
 
 /// One group now.

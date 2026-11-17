@@ -24,8 +24,10 @@ use crate::coded::Coded;
 pub struct Limits {
     /// Records per page.
     pub page_max: u32,
-    /// Conditions per query.
-    pub conditions_max: usize,
+    /// Nodes of the filter tree (operators and conditions; Nachzug 17.11., was `conditions_max`).
+    pub filter_nodes_max: usize,
+    /// Depth of the filter tree (Nachzug 17.11.).
+    pub filter_depth_max: usize,
     /// Sort keys per query.
     pub sort_max: usize,
     /// Projected fields per query.
@@ -37,11 +39,12 @@ pub struct Limits {
 }
 
 impl Default for Limits {
-    /// 200 per page, 16 conditions, 4 sort keys, 64 fields, 64 KiB per value, 5 s per call.
+    /// 200 per page, filter 64 nodes / depth 8, 4 sort keys, 64 fields, 64 KiB per value, 5 s per call.
     fn default() -> Self {
         Self {
             page_max: 200,
-            conditions_max: 16,
+            filter_nodes_max: 64,
+            filter_depth_max: 8,
             sort_max: 4,
             fields_max: 64,
             value_bytes_max: 64 * 1024,
@@ -50,11 +53,12 @@ impl Default for Limits {
     }
 }
 
-/// The ceiling a program proposes when the instance sets none: 1000 per page, 64 conditions, 8 sort keys, 256 fields,
-/// 1 MiB per value, 60 s per call. The instance's own ceiling replaces it (fs-settings).
+/// The ceiling a program proposes when the instance sets none: 1000 per page, filter 256 nodes / depth 16, 8 sort keys,
+/// 256 fields, 1 MiB per value, 60 s per call. The instance's own ceiling replaces it (fs-settings).
 pub const CEILING_DEFAULT: Limits = Limits {
     page_max: 1_000,
-    conditions_max: 64,
+    filter_nodes_max: 256,
+    filter_depth_max: 16,
     sort_max: 8,
     fields_max: 256,
     value_bytes_max: 1024 * 1024,
@@ -67,7 +71,12 @@ impl Limits {
     pub fn clamped(self, ceiling: Self) -> Self {
         Self {
             page_max: self.page_max.clamp(1, ceiling.page_max.max(1)),
-            conditions_max: self.conditions_max.clamp(1, ceiling.conditions_max.max(1)),
+            filter_nodes_max: self
+                .filter_nodes_max
+                .clamp(1, ceiling.filter_nodes_max.max(1)),
+            filter_depth_max: self
+                .filter_depth_max
+                .clamp(1, ceiling.filter_depth_max.max(1)),
             sort_max: self.sort_max.clamp(1, ceiling.sort_max.max(1)),
             fields_max: self.fields_max.clamp(1, ceiling.fields_max.max(1)),
             value_bytes_max: self
@@ -83,16 +92,21 @@ impl Limits {
     /// # Errors
     /// `limit-refused` with `what` (the field name) and `max` (its ceiling).
     pub fn admit(self, ceiling: Self) -> Result<Self, Coded<RecordsCode>> {
-        let pairs: [(&str, u64, u64); 6] = [
+        let pairs: [(&str, u64, u64); 7] = [
             (
                 "page-max",
                 u64::from(self.page_max),
                 u64::from(ceiling.page_max),
             ),
             (
-                "conditions-max",
-                self.conditions_max as u64,
-                ceiling.conditions_max as u64,
+                "filter-nodes-max",
+                self.filter_nodes_max as u64,
+                ceiling.filter_nodes_max as u64,
+            ),
+            (
+                "filter-depth-max",
+                self.filter_depth_max as u64,
+                ceiling.filter_depth_max as u64,
             ),
             ("sort-max", self.sort_max as u64, ceiling.sort_max as u64),
             (
@@ -120,7 +134,8 @@ impl Limits {
     pub fn meet(self, other: Self) -> Self {
         Self {
             page_max: self.page_max.min(other.page_max),
-            conditions_max: self.conditions_max.min(other.conditions_max),
+            filter_nodes_max: self.filter_nodes_max.min(other.filter_nodes_max),
+            filter_depth_max: self.filter_depth_max.min(other.filter_depth_max),
             sort_max: self.sort_max.min(other.sort_max),
             fields_max: self.fields_max.min(other.fields_max),
             value_bytes_max: self.value_bytes_max.min(other.value_bytes_max),
@@ -137,15 +152,21 @@ impl Limits {
     /// Whether a query keeps the limits.
     ///
     /// # Errors
-    /// `page-size` (0 or above `page_max`), `too-many` (`what` = `conditions`, `sort`, `fields`).
+    /// `page-size` (0 or above `page_max`), `position-with-cursor`, the codes of [`super::Filter::check`], `too-many`
+    /// (`what` = `sort`, `fields`).
     pub fn check_query(&self, q: &RecordQuery) -> Result<(), Coded<RecordsCode>> {
         if q.size == 0 || q.size > self.page_max {
             return Err(Coded::new(RecordsCode::PageSize)
                 .with_number(keys::SIZE, u64::from(q.size))
                 .with_number(keys::MAX, u64::from(self.page_max)));
         }
+        if q.position.is_some() && q.after.is_some() {
+            return Err(Coded::new(RecordsCode::PositionWithCursor));
+        }
+        if let Some(f) = &q.filter {
+            f.check(self.filter_depth_max, self.filter_nodes_max)?;
+        }
         let counts = [
-            ("conditions", q.conditions.len(), self.conditions_max),
             ("sort", q.sort.len(), self.sort_max),
             ("fields", q.fields.len(), self.fields_max),
         ];
@@ -161,8 +182,24 @@ impl Limits {
     /// field with a value. The host drops a page that does not, and shows the code.
     ///
     /// # Errors
-    /// `page-too-long`, `value-too-large`, `hidden-has-value`.
+    /// `page-too-long`, `value-too-large`, `hidden-has-value` (also for a snippet from a hidden field), `estimate-mixed`.
     pub fn check_page(&self, q: &RecordQuery, page: &RecordPage) -> Result<(), Coded<RecordsCode>> {
+        if (page.total.is_some() && page.total_estimated.is_some())
+            || page.total_estimated.is_some() != page.estimate_kind.is_some()
+        {
+            return Err(Coded::new(RecordsCode::EstimateMixed));
+        }
+        for s in &page.snippets {
+            if page
+                .items
+                .iter()
+                .any(|r| r.id == s.id && r.hidden.iter().any(|h| h.path == s.path))
+            {
+                return Err(
+                    Coded::new(RecordsCode::HiddenHasValue).with_text(keys::PATH, s.path.join("/"))
+                );
+            }
+        }
         if page.items.len() > q.size as usize {
             return Err(Coded::new(RecordsCode::PageTooLong)
                 .with_number(keys::SIZE, u64::from(q.size))

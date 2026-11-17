@@ -41,7 +41,21 @@ pub enum RecordsCode {
     PageTooLong,
     /// The provider cannot do this kind of condition (parameter `what`); provider rule of ADR 0045 made visible.
     Unsupported,
-    /// A limit setting is 0 or above the instance's ceiling (parameters `what`, `max`); appended after the first draft (O7).
+    /// Nachzug 17.11.: the filter tree is deeper than allowed (parameters `depth`, `max`).
+    FilterTooDeep,
+    /// Nachzug 17.11.: the filter tree has a wrong form (parameter `what` = `empty-operator`).
+    FilterInvalid,
+    /// Nachzug 17.11.: a query gives both `position` and a cursor (`after`); JMAP takes one start only.
+    PositionWithCursor,
+    /// Nachzug (Suche-Arten): the asked search kind is not allowed for this type (parameter `kind`).
+    SearchKindRefused,
+    /// Nachzug: a search policy without its default, or with a kind twice (parameter `kind`).
+    SearchPolicyInvalid,
+    /// Nachzug: `changes` cannot say what changed since this state (JMAP `cannotCalculateChanges`): query again.
+    CannotCalculateChanges,
+    /// Nachzug 2: a page mixes exact and estimated totals, or names an estimate kind without an estimate (or the reverse).
+    EstimateMixed,
+    /// A limit setting is 0 or above the instance's ceiling (parameters `what`, `max`); added by the probe (O7).
     LimitRefused,
 }
 
@@ -63,6 +77,13 @@ impl ErrorCode for RecordsCode {
         Self::GroupUnknown,
         Self::PageTooLong,
         Self::Unsupported,
+        Self::FilterTooDeep,
+        Self::FilterInvalid,
+        Self::PositionWithCursor,
+        Self::SearchKindRefused,
+        Self::SearchPolicyInvalid,
+        Self::CannotCalculateChanges,
+        Self::EstimateMixed,
         Self::LimitRefused,
     ];
 
@@ -83,6 +104,13 @@ impl ErrorCode for RecordsCode {
             Self::GroupUnknown => "group-unknown",
             Self::PageTooLong => "page-too-long",
             Self::Unsupported => "unsupported",
+            Self::FilterTooDeep => "filter-too-deep",
+            Self::FilterInvalid => "filter-invalid",
+            Self::PositionWithCursor => "position-with-cursor",
+            Self::SearchKindRefused => "search-kind-refused",
+            Self::SearchPolicyInvalid => "search-policy-invalid",
+            Self::CannotCalculateChanges => "cannot-calculate-changes",
+            Self::EstimateMixed => "estimate-mixed",
             Self::LimitRefused => "limit-refused",
         }
     }
@@ -100,7 +128,7 @@ pub mod keys {
     pub const ORDER: &str = "order";
     /// A basic type word.
     pub const BASIC: &str = "basic";
-    /// What there are too many of: `conditions`, `sort`, `fields`.
+    /// What there are too many of: `nodes` (of the filter tree), `sort`, `fields`; or what is wrong (`empty-operator`).
     pub const WHAT: &str = "what";
     /// A limit.
     pub const MAX: &str = "max";
@@ -116,4 +144,8 @@ pub mod keys {
     pub const CAUSE: &str = "cause";
     /// A group key.
     pub const KEY: &str = "key";
+    /// The depth of a filter tree.
+    pub const DEPTH: &str = "depth";
+    /// A search kind word.
+    pub const KIND: &str = "kind";
 }

@@ -32,6 +32,10 @@ pub enum SuiteCode {
     ShapeWrong,
     /// A record the person may not read was answered (parameter `id`).
     UnreadableShown,
+    /// Nachzug 17.11.: `total` or `position` counted a record she may not read (parameters `expected`, `got`).
+    CountWrong,
+    /// Nachzug 2: a page gave an estimate as exact or the reverse (parameters `expected`, `got`).
+    EstimateWrong,
 }
 
 impl ErrorCode for SuiteCode {
@@ -49,6 +53,8 @@ impl ErrorCode for SuiteCode {
         Self::GenerationStill,
         Self::ShapeWrong,
         Self::UnreadableShown,
+        Self::CountWrong,
+        Self::EstimateWrong,
     ];
 
     fn as_str(self) -> &'static str {
@@ -65,6 +71,8 @@ impl ErrorCode for SuiteCode {
             Self::GenerationStill => "generation-still",
             Self::ShapeWrong => "shape-wrong",
             Self::UnreadableShown => "unreadable-shown",
+            Self::CountWrong => "count-wrong",
+            Self::EstimateWrong => "estimate-wrong",
         }
     }
 }
