@@ -21,12 +21,15 @@ impl Date {
     }
 
     /// The date `days` days later (earlier if negative), by `chrono`'s calendar; a date and no clock, so no zone or
-    /// daylight saving enters. `None` when the result is outside the dates `chrono` holds (about year 262000),
-    /// never a panic.
+    /// daylight saving enters. `None` when the result lies outside the years 0000 to 9999 (the only years
+    /// [`Date::parse`] reads, so every result can be written and read again), never a panic.
     #[must_use]
     pub fn plus_days(&self, days: i64) -> Option<Self> {
         let delta = chrono::TimeDelta::try_days(days)?;
-        self.0.checked_add_signed(delta).map(Self)
+        self.0
+            .checked_add_signed(delta)
+            .filter(|d| (0..=9999).contains(&d.year()))
+            .map(Self)
     }
 
     /// How many days from `self` until `other`: positive if `other` is later, negative if earlier, 0 if the same.

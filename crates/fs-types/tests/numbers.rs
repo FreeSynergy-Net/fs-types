@@ -194,6 +194,24 @@ fn plus_days_overflow_is_none_not_a_panic() {
 }
 
 #[test]
+fn plus_days_stays_within_the_years_parse_reads() {
+    // Results outside 0000..=9999 would write a text `Date::parse` refuses: `None` instead.
+    assert_eq!(date("2026-11-17").plus_days(2_929_000), None);
+    assert_eq!(date("2026-11-17").plus_days(-800_000), None);
+    assert_eq!(date("9999-12-31").plus_days(1), None);
+    assert_eq!(date("0000-01-01").plus_days(-1), None);
+    // The edge days themselves are valid.
+    assert_eq!(date("9999-12-30").plus_days(1), Some(date("9999-12-31")));
+    assert_eq!(date("0000-01-02").plus_days(-1), Some(date("0000-01-01")));
+    // Every result written can be read again.
+    for days in [-700_000, -1, 0, 1, 2_000_000, 2_900_000] {
+        if let Some(d) = date("2026-11-17").plus_days(days) {
+            assert_eq!(Date::parse(&d.canonical()).unwrap(), d, "{days}");
+        }
+    }
+}
+
+#[test]
 fn days_until_counts_with_sign() {
     let a = date("2026-11-17");
     assert_eq!(a.days_until(&date("2026-11-30")), 13);
