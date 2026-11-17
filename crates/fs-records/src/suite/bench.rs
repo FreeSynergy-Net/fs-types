@@ -7,10 +7,11 @@ use fs_types::{BasicType, CommandDescription, FieldDescription, TypeDescription}
 use super::fixture::{Arrange, Facts, RecordsFixture};
 use crate::records::{
     Group, GroupingDescription, LockKind, MemoryRecords, OrderDescription, RecordLock, Records,
-    Row, Shape, path,
+    Row, SearchKind, SearchPolicy, Shape, path,
 };
 
 const NOTE: &str = "Note";
+const TITLES: [&str; 5] = ["alpha", "beta", "gamma", "delta", "epsilon"];
 const SCOPE: &str = "urn:uuid:00000000-0000-7000-8000-000000000001";
 
 /// The demo type: a title, a state, a secret, a body.
@@ -62,6 +63,16 @@ fn note_shape() -> Shape {
                 manual: false,
             },
         ],
+        // Nachzug: complete, cancellable, deadline allowed; default complete (`open`, `enough`, `live` are refused).
+        search: SearchPolicy::new(
+            &[
+                SearchKind::Complete,
+                SearchKind::Cancellable,
+                SearchKind::Deadline,
+            ],
+            SearchKind::Complete,
+        )
+        .unwrap_or_else(|_| SearchPolicy::complete_only()),
     }
 }
 
@@ -114,8 +125,7 @@ impl RecordsFixture for MemoryBench {
         m.clear();
         let ids: Vec<String> = match situation {
             Arrange::Five => {
-                let titles = ["alpha", "beta", "gamma", "delta", "epsilon"];
-                for (i, t) in titles.iter().enumerate() {
+                for (i, t) in TITLES.iter().enumerate() {
                     let state = if i % 2 == 0 { "todo" } else { "doing" };
                     m.push(row(
                         &format!("n{i}"),
@@ -156,14 +166,25 @@ impl RecordsFixture for MemoryBench {
                 vec!["u1".into(), "u2".into()]
             }
         };
+        let probe = if situation == Arrange::Hidden {
+            "s3cr3t"
+        } else {
+            "alpha"
+        };
+        let values = if situation == Arrange::Five {
+            TITLES.map(str::to_owned).to_vec()
+        } else {
+            Vec::new()
+        };
         Some(Facts {
             data_type: NOTE.into(),
             scope: Some(SCOPE.into()),
             ids,
             text: "title".into(),
-            probe: "alpha".into(),
+            probe: probe.into(),
             hidden: "secret".into(),
             grouping: "lane".into(),
+            values,
         })
     }
 

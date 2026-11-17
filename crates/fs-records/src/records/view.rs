@@ -122,4 +122,42 @@ pub struct RecordPage {
     pub items: Vec<RecordView>,
     /// Where the next page starts; `None` = this was the last.
     pub next: Option<PageCursor>,
+    /// Nachzug 17.11.: the index of the first item in the visible result (JMAP `position`).
+    pub position: u32,
+    /// Nachzug: JMAP `total`, the number of matching records SHE MAY READ; `None` = the provider does not count. A record she
+    /// may not read is never counted, never takes an index, never moves another record's place (suite rule
+    /// `records.unreadable-uncounted`).
+    pub total: Option<u64>,
+    /// Nachzug (Suche-Arten): the query state of this result (JMAP `queryState`), for `changes`.
+    pub state: String,
+    /// Nachzug: whether nothing was left out (a `complete` search is always true or an error; locally always true today).
+    pub complete: bool,
+    /// Nachzug 2: an ESTIMATED number of matches (search kind `relevant`); never together with `total` (exact).
+    pub total_estimated: Option<u64>,
+    /// Nachzug 2: what kind of estimate it is; set exactly when `total_estimated` is.
+    pub estimate_kind: Option<EstimateKind>,
+    /// Nachzug 2: text snippets of the matches (only from fields she may read); empty outside `relevant`.
+    pub snippets: Vec<Snippet>,
+}
+
+/// Nachzug 2: how an estimated total is to be read (named honestly, never shown as exact).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum EstimateKind {
+    /// At least this many.
+    AtLeast,
+    /// About this many.
+    Approximate,
+    /// At most this many.
+    AtMost,
+}
+
+/// Nachzug 2: a piece of text of one match that shows why it matched.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Snippet {
+    /// The record.
+    pub id: String,
+    /// The field the text is from (must be readable for her).
+    pub path: Vec<String>,
+    /// The piece of text (plain text; the matched words are found again by the frontend, no markup).
+    pub text: String,
 }

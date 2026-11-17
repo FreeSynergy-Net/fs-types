@@ -14,6 +14,7 @@ use std::pin::Pin;
 use super::codes::RecordsCode;
 use super::limits::Limits;
 use super::query::RecordQuery;
+use super::search::QueryChanges;
 use super::shape::{GroupSet, Shape};
 use super::view::{RecordPage, RecordView};
 use crate::coded::Coded;
@@ -67,4 +68,12 @@ pub trait Records {
     /// # Errors
     /// `unknown-type`, `unavailable`.
     fn generation(&self, data_type: &str, scope: Option<&str>) -> Pending<'_, u64>;
+
+    /// Nachzug 17.11.: what changed in the result of `query` since `since_state` (JMAP `/queryChanges`, RFC 8620 §5.6), as the
+    /// asking person. Same state = nothing changed; a provider that cannot tell answers `cannot-calculate-changes` and the
+    /// host queries again (never a silent empty answer).
+    ///
+    /// # Errors
+    /// the codes of `find`, `cannot-calculate-changes`.
+    fn changes(&self, query: &RecordQuery, since_state: &str) -> Pending<'_, QueryChanges>;
 }
