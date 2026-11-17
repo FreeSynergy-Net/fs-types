@@ -30,8 +30,9 @@ impl Mutant<MemoryBench> for FlawMutant {
     }
 }
 
-/// The 13 mutants of the bench.
+/// The 22 mutants of the bench (13 + 7 of the Nachzug 17.11. + 2 of Nachzug 2).
 #[must_use]
+#[allow(clippy::too_many_lines)] // one line per mutant: a list, not logic
 pub fn bench_mutants() -> Vec<Box<dyn Mutant<MemoryBench>>> {
     let m = |flaw: Flaw, id: &'static str, rules: &'static [&'static str]| {
         Box::new(FlawMutant { flaw, id, rules }) as Box<dyn Mutant<MemoryBench>>
@@ -101,6 +102,51 @@ pub fn bench_mutants() -> Vec<Box<dyn Mutant<MemoryBench>>> {
             Flaw::UnreadableShown,
             "records-bench.unreadable-shown",
             &["records.unreadable"],
+        ),
+        m(
+            Flaw::XorParity,
+            "records-bench.xor-parity",
+            &["records.filter-tree"],
+        ),
+        m(
+            Flaw::NotDropped,
+            "records-bench.not-dropped",
+            &["records.filter-tree"],
+        ),
+        m(
+            Flaw::DepthUnchecked,
+            "records-bench.depth-unchecked",
+            &["records.filter-limits"],
+        ),
+        m(
+            Flaw::TotalCountsUnreadable,
+            "records-bench.total-counts-unreadable",
+            &["records.unreadable-uncounted"],
+        ),
+        m(
+            Flaw::HiddenFilterSees,
+            "records-bench.hidden-filter-sees",
+            &["records.hidden-filter-blind"],
+        ),
+        m(
+            Flaw::SearchKindIgnored,
+            "records-bench.search-kind-ignored",
+            &["records.search-kind"],
+        ),
+        m(
+            Flaw::StateFrozen,
+            "records-bench.state-frozen",
+            &["records.query-changes"],
+        ),
+        m(
+            Flaw::EstimateAsExact,
+            "records-bench.estimate-as-exact",
+            &["records.estimate-honest"],
+        ),
+        m(
+            Flaw::RelevantBeforePolicy,
+            "records-bench.relevant-before-policy",
+            &["records.relevant-refused"],
         ),
     ]
 }

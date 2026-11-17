@@ -5,8 +5,8 @@ use std::task::{Context, Poll};
 
 use fs_records::coded::Param;
 use fs_records::{
-    CEILING_DEFAULT, FieldValue, Hidden, HiddenReason, Limits, RecordPage, RecordQuery, RecordView,
-    RecordsCode, within,
+    CEILING_DEFAULT, Condition, FieldValue, Filter, Hidden, HiddenReason, Limits, RecordPage,
+    RecordQuery, RecordView, RecordsCode, within,
 };
 use fs_types::{BasicType, PageCursor};
 
@@ -32,6 +32,20 @@ fn has(ps: &[(String, String)], k: &str, v: &str) -> bool {
     ps.iter().any(|(a, b)| a == k && b == v)
 }
 
+fn page_of(items: Vec<RecordView>, next: Option<PageCursor>) -> RecordPage {
+    RecordPage {
+        items,
+        next,
+        position: 0,
+        total: None,
+        state: String::new(),
+        complete: true,
+        total_estimated: None,
+        estimate_kind: None,
+        snippets: vec![],
+    }
+}
+
 fn view(values: Vec<FieldValue>, hidden: Vec<Hidden>) -> RecordView {
     RecordView {
         id: "r".into(),
@@ -52,18 +66,19 @@ fn value(path: &str, text: String) -> FieldValue {
     }
 }
 
-/// K21: defaults, `clamped` under a ceiling, `meet`, `check_query` (size 0 / 201 / 17 conditions / 5 sort keys / 65 fields).
+/// K21: defaults, `clamped` under a ceiling, `meet`, `check_query` (size 0 / 201 / 65 filter nodes / 5 sort keys / 65 fields).
 #[test]
 fn k21_limits() {
     let d = Limits::default();
     assert_eq!(
-        (d.page_max, d.conditions_max, d.sort_max, d.fields_max),
-        (200, 16, 4, 64)
+        (d.page_max, d.filter_nodes_max, d.sort_max, d.fields_max),
+        (200, 64, 4, 64)
     );
     assert_eq!((d.value_bytes_max, d.call_ms), (64 * 1024, 5_000));
     let zero = Limits {
         page_max: 0,
-        conditions_max: 0,
+        filter_nodes_max: 0,
+        filter_depth_max: 0,
         sort_max: 0,
         fields_max: 0,
         value_bytes_max: 0,
@@ -73,7 +88,8 @@ fn k21_limits() {
     assert_eq!((c.page_max, c.call_ms, c.value_bytes_max), (1, 1, 1));
     let big = Limits {
         page_max: u32::MAX,
-        conditions_max: usize::MAX,
+        filter_nodes_max: usize::MAX,
+        filter_depth_max: usize::MAX,
         sort_max: usize::MAX,
         fields_max: usize::MAX,
         value_bytes_max: usize::MAX,
@@ -90,17 +106,16 @@ fn k21_limits() {
     assert_eq!(c0, RecordsCode::PageSize);
     assert!(has(&p0, "size", "0") && has(&p0, "max", "200"));
     assert_eq!(code(d.check_query(&q(201))).0, RecordsCode::PageSize);
-    let cond = |n: usize| {
-        (0..n).fold(q(1), |q, _| {
-            q.when(fs_records::Condition::IsEmpty {
-                path: vec!["title".into()],
-            })
+    let leaf = || {
+        Filter::Is(Condition::IsEmpty {
+            path: vec!["title".into()],
         })
     };
-    assert!(d.check_query(&cond(16)).is_ok());
-    let (c1, p1) = code(d.check_query(&cond(17)));
+    let nodes = |n: usize| q(1).filtered(Filter::And((0..n - 1).map(|_| leaf()).collect()));
+    assert!(d.check_query(&nodes(64)).is_ok());
+    let (c1, p1) = code(d.check_query(&nodes(65)));
     assert_eq!(c1, RecordsCode::TooMany);
-    assert!(has(&p1, "what", "conditions") && has(&p1, "max", "16"));
+    assert!(has(&p1, "what", "nodes") && has(&p1, "max", "64"));
     let sorts = (0..5).fold(q(1), |q, _| {
         q.sort_by(fs_records::SortBy::Order("rank".into()), false)
     });
@@ -162,39 +177,39 @@ fn k21_setting_above_ceiling_is_refused() {
 fn k22_check_page() {
     let d = Limits::default();
     let q = RecordQuery::new("Note", 2);
-    let three = RecordPage {
-        items: vec![
+    let three = page_of(
+        vec![
             view(vec![], vec![]),
             view(vec![], vec![]),
             view(vec![], vec![]),
         ],
-        next: Some(PageCursor("x".into())),
-    };
+        Some(PageCursor("x".into())),
+    );
     let (c, p) = code(d.check_page(&q, &three));
     assert_eq!(c, RecordsCode::PageTooLong);
     assert!(has(&p, "size", "2") && has(&p, "got", "3"));
-    let big = RecordPage {
-        items: vec![view(vec![value("body", "x".repeat(65_537))], vec![])],
-        next: None,
-    };
+    let big = page_of(
+        vec![view(vec![value("body", "x".repeat(65_537))], vec![])],
+        None,
+    );
     let (c, p) = code(d.check_page(&q, &big));
     assert_eq!(c, RecordsCode::ValueTooLarge);
     assert!(has(&p, "path", "body") && has(&p, "bytes", "65537") && has(&p, "max", "65536"));
-    let exact = RecordPage {
-        items: vec![view(vec![value("body", "x".repeat(65_536))], vec![])],
-        next: None,
-    };
+    let exact = page_of(
+        vec![view(vec![value("body", "x".repeat(65_536))], vec![])],
+        None,
+    );
     assert!(d.check_page(&q, &exact).is_ok());
-    let leak = RecordPage {
-        items: vec![view(
+    let leak = page_of(
+        vec![view(
             vec![value("secret", "s".into())],
             vec![Hidden {
                 path: vec!["secret".into()],
                 reason: HiddenReason::NoRight,
             }],
         )],
-        next: None,
-    };
+        None,
+    );
     let (c, p) = code(d.check_page(&q, &leak));
     assert_eq!(c, RecordsCode::HiddenHasValue);
     assert!(has(&p, "path", "secret"));

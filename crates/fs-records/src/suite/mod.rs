@@ -14,7 +14,9 @@ mod codes;
 mod fixture;
 mod mutants;
 mod records_suite;
+mod rules_filter;
 mod rules_read;
+mod rules_relevant;
 mod rules_rights;
 
 pub use bench::MemoryBench;

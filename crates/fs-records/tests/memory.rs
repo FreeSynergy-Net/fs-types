@@ -1,78 +1,12 @@
 //! K24-K26 and K30 of ENTWURF section 5: `MemoryRecords` and `RecordView`.
+mod support;
+
 use fs_records::{
-    Condition, Flaw, Group, GroupingDescription, HiddenReason, Limits, MemoryRecords,
-    OrderDescription, RecordQuery, RecordView, Records, RecordsCode, Row, Shape, SortBy, path,
+    Condition, Flaw, HiddenReason, Limits, MemoryRecords, RecordQuery, RecordView, Records,
+    RecordsCode, SearchPolicy, SortBy, path,
 };
-use fs_types::{BasicType, CommandDescription, FieldDescription, PageCursor, TypeDescription};
-
-const S1: &str = "list-1";
-const S2: &str = "list-2";
-
-fn note_type() -> TypeDescription {
-    TypeDescription::new("Note", "fs-demo", "AS2 Note", "note")
-        .field(
-            FieldDescription::new("title", BasicType::Text)
-                .required()
-                .label("note.title"),
-        )
-        .field(
-            FieldDescription::new("state", BasicType::Choice)
-                .choices(&["todo", "doing", "done"])
-                .label("note.state"),
-        )
-        .field(FieldDescription::new("secret", BasicType::Text).label("note.secret"))
-        .command(CommandDescription::standard_find("note.find", "Note"))
-}
-
-fn shape() -> Shape {
-    Shape {
-        data_type: "Note".into(),
-        groupings: vec![GroupingDescription {
-            name: "state".into(),
-            label: "note.state".into(),
-            field: Some(path("state")),
-            move_command: None,
-        }],
-        orders: vec![OrderDescription {
-            name: "manual".into(),
-            label: "note.manual".into(),
-            field: None,
-            manual: true,
-        }],
-    }
-}
-
-fn memory() -> MemoryRecords {
-    let m = MemoryRecords::new(note_type(), shape(), Vec::<Group>::new());
-    m.push(
-        Row::new("a")
-            .in_scope(S1)
-            .set("title", &["Alpha"])
-            .set("state", &["todo"])
-            .set("secret", &["s-alpha"])
-            .hiding("secret"),
-    );
-    m.push(
-        Row::new("b")
-            .in_scope(S1)
-            .set("title", &["Beta"])
-            .set("state", &["doing"]),
-    );
-    m.push(
-        Row::new("c")
-            .in_scope(S2)
-            .set("title", &["gamma"])
-            .set("state", &["done"]),
-    );
-    m.push(Row::new("d").in_scope(S1).set("title", &["Delta"]));
-    m.push(
-        Row::new("x")
-            .in_scope(S1)
-            .set("title", &["Hidden record"])
-            .unreadable(),
-    );
-    m
-}
+use fs_types::{BasicType, PageCursor};
+use support::{S2, memory, note_type, shape};
 
 fn ids(page: &fs_records::RecordPage) -> Vec<&str> {
     page.items.iter().map(|r| r.id.as_str()).collect()
@@ -193,10 +127,11 @@ async fn k24_pages_and_names() {
     assert!(m.get("Note", "x", &[]).await.unwrap().is_none());
     assert!(m.get("Note", "b", &[]).await.unwrap().is_some());
     // limits come from the provider
-    let small = MemoryRecords::new(note_type(), shape(), vec![]).with_limits(Limits {
-        page_max: 2,
-        ..Limits::default()
-    });
+    let small = MemoryRecords::new(note_type(), shape(SearchPolicy::complete_only()), vec![])
+        .with_limits(Limits {
+            page_max: 2,
+            ..Limits::default()
+        });
     assert_eq!(
         small.find(&q(3)).await.unwrap_err().code(),
         RecordsCode::PageSize

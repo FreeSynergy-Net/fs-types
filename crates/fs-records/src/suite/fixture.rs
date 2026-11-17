@@ -13,7 +13,7 @@ pub enum Arrange {
     Five,
     /// Three readable records with the same value in `text`; `ids` in ascending id order.
     Ties,
-    /// `ids[0]` has the field `hidden` she may not read, and a value in it.
+    /// `ids[0]` has the field `hidden` she may not read, and the value `probe` in it (Nachzug: `probe` is that value).
     Hidden,
     /// `ids[0]` is locked (claimed by someone else).
     Locked,
@@ -38,6 +38,8 @@ pub struct Facts {
     pub hidden: String,
     /// A grouping of the shape.
     pub grouping: String,
+    /// Nachzug 17.11.: the value of `text` of each id, index-aligned with `ids` (situation `Five`: five different values).
+    pub values: Vec<String>,
 }
 
 /// The provider under test.

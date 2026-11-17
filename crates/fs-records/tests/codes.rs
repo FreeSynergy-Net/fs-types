@@ -2,11 +2,11 @@
 use fs_records::RecordsCode;
 use fs_records::coded::{ErrorCode, message_key};
 
-/// K1: every variant once in `ALL`, `as_str` unique kebab-case, `message_key` = prefix + name; 16 codes (15 + `limit-refused`).
+/// K1: every variant once in `ALL`, `as_str` unique kebab-case, `message_key` = prefix + name; 23 codes (22 of the draft + `limit-refused`).
 #[test]
 fn k1_records_codes() {
     let all = RecordsCode::ALL;
-    assert_eq!(all.len(), 16);
+    assert_eq!(all.len(), 23); // draft 22 (K49) + `limit-refused` (O7)
     let names: Vec<&str> = all.iter().map(|c| c.as_str()).collect();
     let mut sorted = names.clone();
     sorted.sort_unstable();
