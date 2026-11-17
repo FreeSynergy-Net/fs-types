@@ -1,0 +1,14 @@
+[package]
+name = "fs-conformance"
+description = "The frame of every FreeSynergy conformance run: suites of rules, mutants that prove the rules can fail, reports as codes with typed parameters. Use as a dev-dependency only."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
