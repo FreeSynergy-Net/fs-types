@@ -66,11 +66,11 @@ fn feature(manifest: &str, key: &str) -> String {
         if line.starts_with('[') {
             in_features = line == "[features]";
             open = false;
-        } else if in_features {
-            if open || line.split_once('=').is_some_and(|(k, _)| k.trim() == key) {
-                text.push_str(line);
-                open = !line.contains(']');
-            }
+        } else if in_features
+            && (open || line.split_once('=').is_some_and(|(k, _)| k.trim() == key))
+        {
+            text.push_str(line);
+            open = !line.contains(']');
         }
     }
     text
@@ -171,10 +171,15 @@ fn scanner_self_test() {
         keys("[target.'cfg(unix)'.dependencies]\nfs-conformance = \"1\"\n"),
         [NAME]
     );
-    assert!(
-        keys("[dev-dependencies]\nfs-conformance = \"1\"\n[package]\nname = \"a\"\n").is_empty()
+    let none: Vec<String> = Vec::new();
+    assert_eq!(
+        keys("[dev-dependencies]\nfs-conformance = \"1\"\n[package]\nname = \"a\"\n"),
+        none
     );
-    assert!(keys("[target.'cfg(unix)'.dev-dependencies]\nfs-conformance = \"1\"\n").is_empty());
+    assert_eq!(
+        keys("[target.'cfg(unix)'.dev-dependencies]\nfs-conformance = \"1\"\n"),
+        none
+    );
     let renamed =
         normal_deps("[dependencies]\nx = { package = \"fs-conformance\", path = \"y\" }\n");
     assert!(is_conformance(&renamed[0]));
