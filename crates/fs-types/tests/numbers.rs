@@ -85,6 +85,35 @@ fn duration_follows_the_jscalendar_grammar() {
     assert_eq!(canon::<Duration>("PT0.0S"), "PT0S");
     assert_eq!(canon::<Duration>("PT60M"), "PT60M");
     assert_eq!(canon::<Duration>("P2D"), "P2D");
+    // Hours then seconds without minutes is not RFC 8984: read, written with `0M`.
+    assert_eq!(canon::<Duration>("PT1H30S"), "PT1H0M30S");
+    assert_eq!(canon::<Duration>("P1DT1H1S"), "P1DT1H0M1S");
+    assert_eq!(canon::<Duration>("PT1H0.5S"), "PT1H0M0.5S");
+    // Written once, read again, written again: the same text (idempotent).
+    for t in [
+        "PT1H30S",
+        "P1DT1H1S",
+        "PT1H",
+        "PT30S",
+        "P1W",
+        "PT0S",
+        "pt1h0.5s",
+        "P1DT2H3M4.5S",
+    ] {
+        let once = canon::<Duration>(t);
+        assert_eq!(canon::<Duration>(&once), once, "{t}");
+    }
+    for ok in [
+        "PT1H",
+        "PT1H5M",
+        "PT1H5M30S",
+        "PT5M30S",
+        "PT30S",
+        "P1DT30S",
+        "PT0S",
+    ] {
+        assert_eq!(canon::<Duration>(ok), ok);
+    }
     for t in [
         "1D", "P", "PT", "P1H", "P1DT", "PT1D", "P1Y", "P1M", "P1W2D", "-P1D", "P1.5D", "PT.5S",
         "PT1.S", "P1DT1S1M", "P1 D",
@@ -158,6 +187,9 @@ fn plus_days_overflow_is_none_not_a_panic() {
     assert_eq!(date("2026-11-17").plus_days(i64::MAX), None);
     assert_eq!(date("2026-11-17").plus_days(i64::MIN), None);
     assert_eq!(date("2026-11-17").plus_days(1 << 40), None);
+    // The days fit `TimeDelta`, the date does not (the `checked_add_signed` path).
+    assert_eq!(date("2026-11-17").plus_days(100_000_000), None);
+    assert_eq!(date("2026-11-17").plus_days(-100_000_000), None);
     assert_eq!(date("2026-11-17").plus_days(-(1 << 40)), None);
 }
 

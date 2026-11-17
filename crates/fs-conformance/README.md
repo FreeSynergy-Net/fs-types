@@ -35,3 +35,14 @@ FreeSynergy is a family of programs that are free for everyone, forever, and tha
 ## Auf Deutsch
 
 Der Rahmen jedes Konformitätslaufs in FreeSynergy: Regeln eines Vertrags laufen (`run`), werden mit Mutanten bewiesen (`prove`: jede Regel muss scheitern können) und als Codes mit typisierten Parametern gemeldet, nie als Sätze. Er steht nie im normalen Abhängigkeitsgraphen eines ausgelieferten Programms: erlaubt sind `[dev-dependencies]`, ein `*-testdata`-Crate oder `optional` hinter dem Feature `conformance`, das in keinem `default` steht. Geschrieben mit Hilfe von Claude (Anthropic).
+
+## Conditions of the first review (A1 to A6)
+
+The changelog of 0.0.2 names them A1-A4 and A6; in full:
+
+1. A fixture type written as `dyn Trait` in `impl Rule<dyn Trait>` needs `&mut (dyn Trait + 'static)` or an alias; generic rules are recommended (doc hint in `check.rs`).
+2. `MessageFormat` is a valid doc identifier (`clippy.toml`).
+3. `prove` checks the ids of mutants like those of rules (form, doubles) with the codes `mutant-id-invalid` and `duplicate-mutant`.
+4. Where the crate may stand (the section above: dev-dependency, `*-testdata` crate, optional behind `conformance`); description and `placement.rs` follow it.
+5. The check over the program repos (`cargo tree --workspace -e normal,build -i fs-conformance` lists only testdata crates) is a gate of fs-release, not part of this version.
+6. Before the next tag, the changelog and the repository README name `fs-conformance` (purpose, the placement rule, the help of Claude stays named).

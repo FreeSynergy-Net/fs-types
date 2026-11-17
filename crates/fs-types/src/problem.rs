@@ -11,8 +11,10 @@
 
 use crate::values::ValueProblem;
 
-/// Why typed text is not (yet) a value. The variants are stable codes for the words of a program.
+/// Why typed text is not (yet) a value. The variants are stable codes for the words of a program; new ones are appended, so a `match` outside this crate needs an
+/// `_` arm (`non_exhaustive`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum TypeProblem {
     /// Nothing typed.
     Empty,

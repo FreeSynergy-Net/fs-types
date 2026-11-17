@@ -103,6 +103,11 @@ impl BasicValue for Duration {
                 if let Some((s, f)) = take(&mut rest, 'S')? {
                     d.seconds = Some(s);
                     d.fraction = f;
+                    // RFC 8984: seconds follow minutes (`dur-minute = 1*DIGIT "M" [dur-second]`), so hours and
+                    // seconds without minutes are read, and written with `0M` (read tolerantly, write strictly).
+                    if d.hours.is_some() && d.minutes.is_none() {
+                        d.minutes = Some(0);
+                    }
                 }
             }
         }
