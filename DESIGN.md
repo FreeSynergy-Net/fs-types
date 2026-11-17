@@ -25,8 +25,8 @@ Not here: the `TypeCatalog` server (transport, goes to `fs-rpc`), the provider r
 
 ## Decisions (provisional, marked for the strategy)
 
-* Kinds in this version: the thirteen of the task list plus `text` and `multilineText`. `onlineService`, `timeZone`, `duration`, `recurrence`, `quantity`, `money`, `colour`, `sound`, `video`, formatted text are in `map.md` and are appended to `BasicType` later (append only; a reader meeting a newer kind treats the field as plain text).
-* Canonical forms: e-mail as `values::EmailAddress` makes it; phone `+<digits>`; language RFC 5646 case; link with a host (`//`) normalised by RFC 3986 syntax rules (scheme and host lower case, dot segments removed, percent codes of unreserved characters decoded and hex digits upper case), link without a host (`mailto:`, `urn:`, `tel:`) only the scheme in lower case; reference kept as written (an identity); date `YYYY-MM-DD`; date-time with offset, `Z` for UTC (two date-times are equal only if instant and offset are; `-00:00`, "offset unknown", is refused); place as `geo:` URI; fingerprint bare upper-case hex; keywords lower case, sorted, `, `-joined.
+* Kinds in this version: the thirteen of the task list plus `text` and `multilineText`. `onlineService`, `timeZone`, `recurrence`, `quantity`, `money`, `colour`, `sound`, `video`, formatted text are in `map.md` and are appended to `BasicType` later (append only; 0.0.3 added `integer`, `duration`, `flag`, `whole` as `@17` to `@20`; a reader meeting a newer kind treats the field as plain text).
+* Canonical forms: e-mail as `values::EmailAddress` makes it; phone `+<digits>`; language RFC 5646 case; link with a host (`//`) normalised by RFC 3986 syntax rules (scheme and host lower case, dot segments removed, percent codes of unreserved characters decoded and hex digits upper case), link without a host (`mailto:`, `urn:`, `tel:`) only the scheme in lower case; reference kept as written (an identity); date `YYYY-MM-DD`; date-time with offset, `Z` for UTC (two date-times are equal only if instant and offset are; `-00:00`, "offset unknown", is refused); place as `geo:` URI; fingerprint bare upper-case hex; keywords lower case, sorted, `, `-joined; integer and whole plain decimal (no `+`, no leading zeros, `-0` is `0`; whole refuses negatives with `OutOfRange`); flag `true`/`false` (`yes`/`no` read); duration RFC 8984 upper case (`P1W`, `P1DT2H30M`, `PT0.5S`; units kept, never converted; no sign, years or months).
 * Limits (ours, provisional): text 4096 chars, multi-line 65536, URI 2048 bytes, keyword 64 chars and 256 per set, name/address parts 1024 chars.
 * Unsafe schemes (provisional): a `Link` may not use `javascript:`, `vbscript:` or `data:`, an `Image` not `javascript:` or `vbscript:` (a frontend may make them clickable); `TypeProblem::UnsafeScheme`. Characters refused in every text: control characters, U+2028/U+2029 and the bidirectional overrides and isolates; multi-line texts and `Address.full` keep `\n`.
 * `Reference` has no scheme block (an id is an identity, not a target to open); a frontend must not make references clickable by scheme alone, it shows the target's compact component. A reference target in a description is a bare type name (UpperCamel), no program prefix.
@@ -56,7 +56,7 @@ Candidate `calcard` 0.3.14 (Stalwart Labs; `Apache-2.0 OR MIT`; first released 2
 
 | Area | State |
 |---|---|
-| `types.capnp` draft 0.1: `BasicType` (17 values), `Name`, `Address`, `Image` and their kinds, type description (`FieldDescription`, `CommandDescription`, `TypeDescription`, `CommandKind`), `TypeCatalog.describe` | done, draft |
+| `types.capnp` draft 0.1: `BasicType` (21 values), `Name`, `Address`, `Image` and their kinds, type description (`FieldDescription`, `CommandDescription`, `TypeDescription`, `CommandKind`), `TypeCatalog.describe` | done, draft |
 | Rules for all 16 kinds: check, normalise (suggest where it makes sense: e-mail domains, language, link scheme, reference, keywords, choice) | done, tested (each kind, incl. the cases the independent review found) |
 | `BasicRules` registry, unknown kind as text | done, tested |
 | Description: builders, validation, registry, record check, wire round trip | done, tested (the `CatalogServer` moved to `fs-rpc`) |
@@ -65,7 +65,7 @@ Candidate `calcard` 0.3.14 (Stalwart Labs; `Apache-2.0 OR MIT`; first released 2
 
 * `Edit` paths deeper than one step (map key, then property): the wire form carries them, `Edit::check` refuses them (`NestedPath`) because descriptions have flat fields; nested typing comes with nested descriptions.
 
-* `onlineService`, `timeZone`, `duration`, `recurrence`, `quantity`, `money`, `colour`, `sound`, `video`, formatted text: not yet in `BasicType`.
+* `onlineService`, `timeZone`, `recurrence`, `quantity`, `money`, `colour`, `sound`, `video`, formatted text: not yet in `BasicType`.
 * IANA time zones: `Zone` checks the form only; that a name exists in the tz database, and the conversion between a zone and UTC, are not here (a recurrence or a calendar needs them). `LocalDateTime` has no fraction of a second (JSCalendar allows one; an importer cuts it off and says so).
 * Language: well-formed only, the IANA subtag registry is not consulted. Address: country code checked for shape, not against the ISO 3166-1 list. Place: points only, see `GeoPoint` for the plain coordinate (no `GeoJSON` shapes; unknown `geo:` parameters are dropped; the poles are not canonicalised). Key: OpenPGP fingerprints only (no SSH, age, X.509). Phone and e-mail: no existence check (a network matter).
 * Suggestions: phone, date, date-time, place, key, name, address, image, text offer none (`suggest` returns an empty list on purpose).

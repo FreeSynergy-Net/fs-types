@@ -2,6 +2,13 @@
 
 Version = tag.
 
+## Unreleased
+
+- New basic types, appended to `BasicType` (Cap'n Proto ordinals only appended, nothing renumbered): `integer` (@17, whole number with sign, 64 bit), `duration` (@18, RFC 8984 duration: `P1W`, `P1DT2H30M`, `PT0.5S`; no years or months, units kept as written), `flag` (@19, yes/no, canonical `true`/`false`), `whole` (@20, whole number from 0 up, negatives give `OutOfRange`). Rust types `Integer`, `Duration`, `Flag`, `Whole` (module `number`, `duration`), all `BasicValue`s and registered in `BasicRules`; new `TypeProblem` codes `number.bad`, `duration.bad`, `flag.bad` (appended). A reader of an older schema reads the new kinds as `unknown` (plain text). Users waiting for them: fs-setting (`flag`, `whole`), fs-forms/fs-tasks (`integer`, `duration`).
+- `Date::plus_days(i64) -> Option<Date>` and `Date::days_until(&Date) -> i64`: day arithmetic through `chrono` (no own calendar rules); an out-of-range result is `None`, never a panic; a date stays a date (no zone, no clock). For fs-tasks (due dates).
+- Everything above is additive: no existing signature, order or ordinal changed. `coded.rs` and `fs-conformance` are untouched. Written with the help of Claude (Anthropic).
+- Auf Deutsch: Neue Grundtypen, an `BasicType` angehängt (Ordinale nur angehängt): `integer` (@17, ganze Zahl mit Vorzeichen, 64 Bit), `duration` (@18, RFC-8984-Dauer: `P1W`, `P1DT2H30M`, `PT0.5S`; keine Jahre/Monate, Einheiten bleiben wie geschrieben), `flag` (@19, Ja/Nein, kanonisch `true`/`false`), `whole` (@20, ganze Zahl ab 0, Negatives = `OutOfRange`). Rust-Typen `Integer`, `Duration`, `Flag`, `Whole`, alle `BasicValue` und in `BasicRules` eingetragen; neue `TypeProblem`-Codes `number.bad`, `duration.bad`, `flag.bad` (angehängt); ein Leser des alten Schemas liest die neuen Arten als `unknown` (einfacher Text). `Date::plus_days` und `Date::days_until`: Tagesrechnung über `chrono`, Überlauf = `None`, kein Panic, Datum bleibt Datum (keine Zone, keine Uhrzeit). Rein additiv; `coded.rs` und `fs-conformance` unverändert. Geschrieben mit Hilfe von Claude (Anthropic).
+
 ## 0.0.2
 
 - New module `fs_types::coded`: `ErrorCode` (trait: stable codes of one crate, `PREFIX`, `ALL`, `as_str`), `Coded<C>` (a code with typed parameters `Param::Text` / `Param::Number`, `with_text`, `with_number`, `with_param`), `Code` (the same code with its enum erased), `message_key`. A failure is a code with parameters, never a sentence (ADR 0057). Additive: nothing existing changed; no new dependency. Users: fs-conformance, fs-starter, fs-setting (their stand-ins `coded_stub` go away in their next change).

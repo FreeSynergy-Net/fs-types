@@ -36,7 +36,11 @@ enum BasicType {
   choice        @14;   # one entry of a fixed list (JSCalendar enums, own lists); the list is in the field description
   keywords      @15;   # set of short words, JSContact/JSCalendar `keywords`
   reference     @16;   # AS2 `id` (IRI) of an object; a frontend shows the target's compact component
-  # Append new kinds here (onlineService, timeZone, duration, recurrence, quantity, money, colour, sound, video,
+  integer       @17;   # whole number, signed (64 bit), canonical decimal without `+` and leading zeros
+  duration      @18;   # RFC 8984 duration (ISO 8601 subset): `P1W`, `P1DT2H30M`, `PT0.5S`; no years or months
+  flag          @19;   # yes/no, canonical `true` / `false`
+  whole         @20;   # whole number from 0 up (not negative), canonical decimal
+  # Append new kinds here (onlineService, timeZone, recurrence, quantity, money, colour, sound, video,
   # formatted text ... are in map.md and still to come).
 }
 

@@ -62,6 +62,12 @@ pub enum TypeProblem {
     BadId,
     /// Not a version (`major.minor.patch` with an optional pre-release).
     BadVersion,
+    /// Not a whole number: optional sign, then digits only.
+    BadNumber,
+    /// Not a duration (RFC 8984: `P1W`, `P1DT2H30M`, `PT0.5S`; no years or months).
+    BadDuration,
+    /// Not a yes/no value (`true`, `false`, `yes`, `no`).
+    BadFlag,
 }
 
 impl TypeProblem {
@@ -92,6 +98,9 @@ impl TypeProblem {
             Self::OutOfRange => "out-of-range",
             Self::BadId => "id.bad",
             Self::BadVersion => "version.bad",
+            Self::BadNumber => "number.bad",
+            Self::BadDuration => "duration.bad",
+            Self::BadFlag => "flag.bad",
         }
     }
 }

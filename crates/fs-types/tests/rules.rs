@@ -22,6 +22,10 @@ fn every_known_kind_has_its_own_rule() {
         BasicType::Choice,
         BasicType::Keywords,
         BasicType::Reference,
+        BasicType::Integer,
+        BasicType::Duration,
+        BasicType::Flag,
+        BasicType::Whole,
     ] {
         assert_eq!(rules.rule(k).kind(), k);
     }

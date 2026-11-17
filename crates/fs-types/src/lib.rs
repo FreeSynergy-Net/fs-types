@@ -38,6 +38,7 @@ mod choice;
 mod contact;
 mod datetime;
 pub mod describe;
+mod duration;
 mod fix;
 mod geo;
 mod ids;
@@ -50,6 +51,7 @@ mod location;
 mod location_parts;
 mod moment;
 mod name;
+mod number;
 mod paging;
 mod person;
 mod place;
@@ -65,6 +67,7 @@ pub use describe::{
     CommandDescription, CommandKind, DescribesType, DescriptionProblem, Edit, FieldDescription,
     FieldEdit, RecordIssue, RecordProblem, TypeDescription, TypeRegistry,
 };
+pub use duration::Duration;
 pub use fix::{AccuracyLevel, FixSource, PositionFix};
 pub use geo::GeoPoint;
 pub use ids::{FileRef, MediaType, ObjectId, Revision};
@@ -77,6 +80,7 @@ pub use location::{Location, RelativeTo};
 pub use location_parts::LocationParts;
 pub use moment::{LocalDateTime, Utc, Zone, ZoneKind};
 pub use name::Name;
+pub use number::{Flag, Integer, Whole};
 pub use paging::{Capabilities, Page, PageCursor, Problem};
 pub use person::{Attendee, ContactAddress, PersonArt, PersonRef};
 pub use place::Place;
