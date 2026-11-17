@@ -135,3 +135,15 @@ async fn k19_empty_must_fail() {
     )));
     assert_eq!(r.caught, Vec::new());
 }
+
+/// K9 (per mutant): each demo mutant, run on its own fresh fake, breaks exactly the rule it names and no other.
+#[tokio::test]
+async fn k9_each_demo_mutant_breaks_only_its_rule() {
+    for m in demo_mutants() {
+        let mut f = fresh();
+        assert_eq!(m.apply(&mut *f), Applied::Yes);
+        let r = run(&DemoSuite, &mut *f, &Options::default()).await;
+        let failed: Vec<_> = r.failures.iter().map(|x| x.rule).collect();
+        assert_eq!(failed, m.must_fail(), "mutant {:?}", m.id());
+    }
+}
