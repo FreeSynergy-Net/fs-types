@@ -2,6 +2,11 @@
 
 Version = tag.
 
+## Unreleased
+
+- New crate `fs-records` (in this workspace; version = repository version, no tag of its own): the one way every program lets a frontend READ its records (ADR 0087 Nachtrag, stage E3, trait-delta F1). Trait `Records` (`limits`, `shape`, `find`, `get`, `groups`, `generation`; boxed futures, not `Send`, usable as `dyn Records`), closed query forms (`RecordQuery`, `Condition`, `Sort`), answers as the asking person (`RecordView` with hidden fields and no value, lock, `may`, group; `RecordPage` with cursor), `Shape` (groupings, orders), `GroupSet`, `Limits` (size and time limits as settings: the program gives the default, the ceiling is the instance's, `Limits::admit` refuses a value above it, `Limits::clamped(ceiling)`, `within`), `MemoryRecords` (double for tests), codes `RecordsCode` (16, `records-error-*`). Feature `conformance` (never in `default`): `RecordsSuite` (13 rules), `MemoryBench`, 13 bench mutants (`fs_conformance::prove`). Uses `fs_types::coded`, `TypeDescription`, `PageCursor`; no new third-party dependency outside the feature (`async-trait` behind it). Written with the help of Claude (Anthropic).
+- Auf Deutsch: Neues Crate `fs-records` (Lesen der Datensätze jedes Programms über EINE Schnittstelle `Records`: Filter, Sortierung, Seiten, Gruppierung, Auswahl der Felder, immer als die fragende Person; nicht lesbare Datensätze fehlen, nicht lesbare Felder sind als verborgen gelistet und ohne Wert); Grenzen für Größe und Zeit sind Einstellungen (Voreinstellung vom Programm, Obergrenze von der Instanz; ein Wert darüber wird abgelehnt); `MemoryRecords` für Tests; Feature `conformance` (nie in `default`) mit der Prüfreihe `RecordsSuite` (13 Regeln) und 13 Prüf-Mutanten. Geschrieben mit Hilfe von Claude (Anthropic).
+
 ## 0.0.2
 
 - New module `fs_types::coded`: `ErrorCode` (trait: stable codes of one crate, `PREFIX`, `ALL`, `as_str`), `Coded<C>` (a code with typed parameters `Param::Text` / `Param::Number`, `with_text`, `with_number`, `with_param`), `Code` (the same code with its enum erased), `message_key`. A failure is a code with parameters, never a sentence (ADR 0057). Additive: nothing existing changed; no new dependency. Users: fs-conformance, fs-starter, fs-setting (their stand-ins `coded_stub` go away in their next change).

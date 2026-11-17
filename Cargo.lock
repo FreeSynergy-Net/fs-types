@@ -261,6 +261,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fs-records"
+version = "0.0.2"
+dependencies = [
+ "async-trait",
+ "fs-conformance",
+ "fs-types",
+ "tokio",
+]
+
+[[package]]
 name = "fs-set-times"
 version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
