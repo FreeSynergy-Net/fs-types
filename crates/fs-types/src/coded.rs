@@ -1,14 +1,17 @@
 //! What went wrong, as a code with typed parameters: never a sentence (ADR 0057; the line of fs-rpc `docs/errors.md`).
 //!
-//! STAND-IN for `fs_types::coded` (decision T1 with condition: parameter keys are `String` as in `RpcError`, rpc-0003
-//! `code/error.rs:13`; `message_key` is a free function, trait-delta rule 6: no default methods). When the fs-types tag carries
-//! it, this file is deleted and the crate re-exports `fs_types::coded` unchanged.
+//! Every crate that reports a failure names its own enum of stable codes ([`ErrorCode`]) and carries it with typed
+//! parameters ([`Coded`]); the program words it in its MessageFormat 2 files under the key [`message_key`]. A report that
+//! holds codes of many crates erases the enum and keeps prefix, name and parameters ([`Code`]). Parameter keys are `String`
+//! as in `RpcError` (decision T1 of the scaffold drafts); `message_key` is a free function (no default methods in the trait).
+//! Users: fs-conformance (its reports), fs-starter, fs-setting. Added in the first change after the tag `v0.0.1`;
+//! nothing existing is touched.
 //!
 //! Pattern: Value object (`Coded`, `Code`, `Param`) + a catalog per enum (`ErrorCode`).
 
 use std::fmt;
 
-/// A typed parameter: text or number. The program words it in its `MessageFormat 2` files.
+/// A typed parameter: text or number. The program words it in its MessageFormat 2 files.
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Param {
@@ -28,7 +31,7 @@ pub trait ErrorCode: Copy + Eq + fmt::Debug + 'static {
     fn as_str(self) -> &'static str;
 }
 
-/// The `MessageFormat 2` key of a code: [`ErrorCode::PREFIX`] and [`ErrorCode::as_str`].
+/// The MessageFormat 2 key of a code: [`ErrorCode::PREFIX`] and [`ErrorCode::as_str`].
 #[must_use]
 pub fn message_key<C: ErrorCode>(code: C) -> String {
     format!("{}{}", C::PREFIX, code.as_str())
@@ -51,19 +54,23 @@ impl<C: ErrorCode> Coded<C> {
         }
     }
 
+    /// Adds a parameter of any kind, unchanged (for code that copies the parameters of another code).
+    #[must_use]
+    pub fn with_param(mut self, key: &str, value: Param) -> Self {
+        self.params.push((key.to_owned(), value));
+        self
+    }
+
     /// Adds a text parameter.
     #[must_use]
-    pub fn with_text(mut self, key: &str, value: impl Into<String>) -> Self {
-        self.params
-            .push((key.to_owned(), Param::Text(value.into())));
-        self
+    pub fn with_text(self, key: &str, value: impl Into<String>) -> Self {
+        self.with_param(key, Param::Text(value.into()))
     }
 
     /// Adds a number parameter.
     #[must_use]
-    pub fn with_number(mut self, key: &str, value: u64) -> Self {
-        self.params.push((key.to_owned(), Param::Number(value)));
-        self
+    pub fn with_number(self, key: &str, value: u64) -> Self {
+        self.with_param(key, Param::Number(value))
     }
 
     /// The code.
@@ -106,7 +113,7 @@ pub struct Code {
 }
 
 impl Code {
-    /// The `MessageFormat 2` key: prefix and name.
+    /// The MessageFormat 2 key: prefix and name.
     #[must_use]
     pub fn message_key(&self) -> String {
         format!("{}{}", self.prefix, self.name)

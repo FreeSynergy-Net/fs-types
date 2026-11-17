@@ -2,8 +2,8 @@
 //!
 //! Pattern: Value objects (plain data; `is_conformant` and `is_proven` are the only questions).
 
-use crate::fault::Code;
 use crate::ids::{MutantId, Need, RuleId, SuiteId};
+use fs_types::coded::Code;
 
 /// One failed rule (or a frame check about a rule id) with the code unchanged.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -69,7 +69,7 @@ pub struct MutantReport {
     /// Mutants all of whose rules failed as they must.
     pub caught: Vec<MutantId>,
     /// What is wrong with the proof (`mutant-not-caught`, `mutant-unknown-rule`, `mutant-not-applicable`,
-    /// `rule-without-mutant`, and the id checks of the run).
+    /// `rule-without-mutant`, `mutant-id-invalid`, `duplicate-mutant`, and the id checks of the run).
     pub failures: Vec<Code>,
 }
 

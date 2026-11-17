@@ -5,9 +5,9 @@
 use async_trait::async_trait;
 
 use crate::codes::{ConformanceCode, keys};
-use crate::fault::{Code, Coded};
 use crate::ids::{Need, RuleId};
 use crate::switches::Options;
+use fs_types::coded::{Code, Coded};
 
 /// What a rule found.
 #[non_exhaustive]
@@ -22,6 +22,10 @@ pub enum Verdict {
 }
 
 /// One rule over the fixture type `F` of its building block (usually `dyn SomethingFixture`, defined in that block).
+///
+/// A fixture type written as `dyn Trait` in `impl Rule<dyn Trait>` needs `&mut (dyn Trait + 'static)` in `check`, or an
+/// alias `type Fx = dyn Trait;` (an elided `&mut dyn Trait` there has a shorter object lifetime and does not match).
+/// Generic rules `impl<F: Trait + ?Sized> Rule<F>` avoid the problem and are the recommended form.
 ///
 /// A rule seeds its own data, never relies on another rule, and does not panic: a setup that fails is
 /// `Verdict::Fail` with `setup-failed` (or the block's own code). `?Send`: rules may hold capnp clients across `.await`.
@@ -77,10 +81,7 @@ impl Cx {
             .with_text(keys::RULE, rule.as_str())
             .with_text("cause", cause.message_key());
         for (k, v) in cause.params {
-            coded = match v {
-                crate::fault::Param::Text(t) => coded.with_text(&k, t),
-                crate::fault::Param::Number(n) => coded.with_number(&k, n),
-            };
+            coded = coded.with_param(&k, v);
         }
         Verdict::Fail(coded.erase())
     }

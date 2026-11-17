@@ -2,7 +2,7 @@
 //!
 //! Pattern: none, an enum with total `match`es (as fs-rpc `code/kind.rs`). A code is never renamed or reused once released.
 
-use crate::fault::ErrorCode;
+use fs_types::coded::ErrorCode;
 
 /// What the frame found wrong, without a sentence. Message key: `conformance-error-` and the name.
 #[non_exhaustive]
@@ -24,6 +24,10 @@ pub enum ConformanceCode {
     MutantNotApplicable,
     /// No mutant names this rule: a rule that cannot fail proves nothing (parameter `rule`).
     RuleWithoutMutant,
+    /// A mutant id is not lower case ASCII words joined by `.` or `-` (parameter `mutant`). Nothing is proven.
+    MutantIdInvalid,
+    /// Two mutants of one proof have the same id (parameter `mutant`). Nothing is proven.
+    DuplicateMutant,
 }
 
 impl ErrorCode for ConformanceCode {
@@ -37,6 +41,8 @@ impl ErrorCode for ConformanceCode {
         Self::MutantUnknownRule,
         Self::MutantNotApplicable,
         Self::RuleWithoutMutant,
+        Self::MutantIdInvalid,
+        Self::DuplicateMutant,
     ];
 
     fn as_str(self) -> &'static str {
@@ -49,6 +55,8 @@ impl ErrorCode for ConformanceCode {
             Self::MutantUnknownRule => "mutant-unknown-rule",
             Self::MutantNotApplicable => "mutant-not-applicable",
             Self::RuleWithoutMutant => "rule-without-mutant",
+            Self::MutantIdInvalid => "mutant-id-invalid",
+            Self::DuplicateMutant => "duplicate-mutant",
         }
     }
 }

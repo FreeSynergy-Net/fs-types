@@ -3,8 +3,12 @@
 //! A building block (a crate) ships its own rules behind its feature `conformance`: a [`Suite`] of [`Rule`]s over a fixture
 //! type `F` the block defines itself (usually `dyn SomethingFixture`). This crate only runs them ([`run`]), proves that every
 //! rule can fail ([`prove`] with [`Mutant`]s), and reports codes with typed parameters, never sentences ([`Report`]).
-//! It knows no program, no transport and no window: it depends on the values crate only (`coded`, stand-in [`fault`] until
-//! the fs-types tag), so every layer may use it without an edge upwards (Opus review of the trait drafts, condition C1).
+//! It knows no program, no transport and no window: it depends on the values crate only (`fs_types::coded`, re-exported here),
+//! so every layer may use it without an edge upwards (Opus review of the trait drafts, condition C1).
+//!
+//! Where it may stand (condition O1, made exact by decision b7, 17.11.): never in the normal graph of a shipped program.
+//! Allowed are `[dev-dependencies]`, a normal dependency of a `*-testdata` crate, and `optional = true` behind the feature
+//! `conformance`, which is in no `default`. `tests/placement.rs` checks this in this workspace.
 //!
 //! Rules of the frame:
 //! - A skipped rule is never a passed rule: it is listed in [`Report::skipped`] with the [`Need`] that was missing.
@@ -20,7 +24,6 @@
 
 mod check;
 mod codes;
-pub mod fault;
 mod group;
 mod ids;
 mod outcome;
@@ -30,7 +33,7 @@ mod switches;
 
 pub use check::{Cx, Rule, Verdict};
 pub use codes::{ConformanceCode, keys};
-pub use fault::{Code, Coded, ErrorCode, Param, message_key};
+pub use fs_types::coded::{Code, Coded, ErrorCode, Param, message_key};
 pub use group::Suite;
 pub use ids::{MutantId, Need, RuleId, SuiteId};
 pub use outcome::{Failure, MutantReport, Report, Skip};

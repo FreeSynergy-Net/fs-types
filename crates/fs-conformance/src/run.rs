@@ -6,12 +6,12 @@ use std::collections::BTreeSet;
 
 use crate::check::{Cx, Rule, Verdict};
 use crate::codes::{ConformanceCode, keys};
-use crate::fault::Coded;
 use crate::group::Suite;
 use crate::ids::{Need, RuleId};
 use crate::outcome::{Failure, MutantReport, Report, Skip};
 use crate::proof::{Applied, Mutant};
 use crate::switches::Options;
+use fs_types::coded::Coded;
 
 /// The id failures of a list of rules: malformed ids, then duplicates (each duplicate once). Empty = the ids are fine.
 fn id_failures<F: ?Sized>(rules: &[Box<dyn Rule<F>>]) -> Vec<Failure> {
@@ -33,6 +33,23 @@ fn id_failures<F: ?Sized>(rules: &[Box<dyn Rule<F>>]) -> Vec<Failure> {
                     .with_text(keys::RULE, id.as_str())
                     .erase(),
             });
+        }
+    }
+    out
+}
+
+/// The id failures of a list of mutants: malformed ids, then duplicates (each duplicate once). Empty = the ids are fine.
+fn mutant_id_failures<F: ?Sized>(mutants: &[Box<dyn Mutant<F>>]) -> Vec<Coded<ConformanceCode>> {
+    let mut out: Vec<Coded<ConformanceCode>> = Vec::new();
+    let mut seen = BTreeSet::new();
+    let mut doubled = BTreeSet::new();
+    for mutant in mutants {
+        let id = mutant.id();
+        let coded = |code| Coded::new(code).with_text(keys::MUTANT, id.as_str());
+        if !id.is_well_formed() {
+            out.push(coded(ConformanceCode::MutantIdInvalid));
+        } else if !seen.insert(id) && doubled.insert(id) {
+            out.push(coded(ConformanceCode::DuplicateMutant));
         }
     }
     out
@@ -69,7 +86,7 @@ pub async fn run<F: ?Sized>(suite: &dyn Suite<F>, fixture: &mut F, options: &Opt
     report
 }
 
-/// Proves `suite`: every rule is named by at least one mutant, and every mutant, switched on a FRESH fixture from
+/// Proves `suite`: the mutant ids are well formed and unique (else nothing is proven), every rule is named by at least one mutant, and every mutant, switched on a FRESH fixture from
 /// `fresh`, makes each of its `must_fail` rules fail. `options.skip` applies; a skipped `must_fail` rule counts as
 /// not caught (a proof must not be skipped away).
 pub async fn prove<F: ?Sized>(
@@ -87,6 +104,11 @@ pub async fn prove<F: ?Sized>(
     let ids = id_failures(&rules);
     if !ids.is_empty() {
         out.failures = ids.into_iter().map(|f| f.code).collect();
+        return out;
+    }
+    let bad = mutant_id_failures(mutants);
+    if !bad.is_empty() {
+        out.failures = bad.into_iter().map(Coded::erase).collect();
         return out;
     }
     let known: BTreeSet<RuleId> = rules.iter().map(|r| r.id()).collect();

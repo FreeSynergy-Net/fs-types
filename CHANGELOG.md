@@ -2,6 +2,12 @@
 
 Version = tag.
 
+## Unreleased
+
+- New module `fs_types::coded`: `ErrorCode` (trait: stable codes of one crate, `PREFIX`, `ALL`, `as_str`), `Coded<C>` (a code with typed parameters `Param::Text` / `Param::Number`, `with_text`, `with_number`, `with_param`), `Code` (the same code with its enum erased), `message_key`. A failure is a code with parameters, never a sentence (ADR 0057). Additive: nothing existing changed; no new dependency. Users: fs-conformance, fs-starter, fs-setting (their stand-ins `coded_stub` go away).
+- New crate `fs-conformance` (in this workspace; version = repository version, no tag of its own yet): the frame of every conformance run (`run`, `prove`, `Mutant`, `Report`). It stands only as a dev-dependency, in a `*-testdata` crate, or optional behind the feature `conformance` (never in `default`). It replaces its own copy of the codes (`fault.rs`) by `fs_types::coded`. New codes `mutant-id-invalid` and `duplicate-mutant` (`prove` checks mutant ids), doc hint on `dyn` fixture types, README. `clippy.toml`: `MessageFormat` is a valid doc identifier.
+- Auf Deutsch: Neues Modul `fs_types::coded` (`ErrorCode`, `Coded<C>`, `Code`, `Param`, `message_key`): ein Fehler ist ein Code mit typisierten Parametern, nie ein Satz (ADR 0057); rein additiv, keine neue Abhängigkeit; Nutzer: fs-conformance, fs-starter, fs-setting. Neues Crate `fs-conformance` (Rahmen jedes Konformitätslaufs: `run`, `prove`, `Mutant`, `Report`); steht nur als dev-dependency, in einem `*-testdata`-Crate oder `optional` hinter dem Feature `conformance` (nie in `default`); nutzt statt der eigenen Kopie `fault.rs` jetzt `fs_types::coded`; neue Codes `mutant-id-invalid`, `duplicate-mutant`; README. Kein Tag, keine Version gesetzt.
+
 ## 0.0.1
 
 - First version of the repository. Up to `fs-interfaces` v0.0.26 this code was part of the repository `fs-interfaces`: the crate `fs-types` (14 commits of history), the schema `schema/types.capnp` (5), the module `values` (2) and the generated `types_capnp.rs` are taken over with their history (`git filter-branch` on the tag v0.0.26 = 9df19ee323145119e89c003e64982be68e9fc1da); one commit moves them to the new layout. The version restarts at 0.0.1 (the old crate was 0.0.26 by the version of fs-interfaces).

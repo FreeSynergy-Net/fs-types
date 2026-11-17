@@ -147,3 +147,45 @@ async fn k9_each_demo_mutant_breaks_only_its_rule() {
         assert_eq!(failed, m.must_fail(), "mutant {:?}", m.id());
     }
 }
+
+/// K21 (A3): a malformed mutant id is reported and nothing is proven (no mutant runs).
+#[tokio::test]
+async fn k21_mutant_id_invalid() {
+    let mut ms = demo_mutants();
+    ms.push(Box::new(Inert {
+        id: "Demo Bad",
+        must: vec![ADD_SUMS],
+        applied: Applied::Yes,
+    }));
+    let r = prove(&DemoSuite, &fresh, &ms, &Options::default()).await;
+    assert_eq!(
+        r.failures,
+        vec![frame(
+            ConformanceCode::MutantIdInvalid,
+            &[("mutant", "Demo Bad")]
+        )]
+    );
+    assert_eq!(r.caught, Vec::new());
+}
+
+/// K22 (A3): a doubled mutant id is reported once and nothing is proven.
+#[tokio::test]
+async fn k22_duplicate_mutant() {
+    let mut ms = demo_mutants();
+    for _ in 0..3 {
+        ms.push(Box::new(Inert {
+            id: "demo.no-limit",
+            must: vec![LIMIT],
+            applied: Applied::Yes,
+        }));
+    }
+    let r = prove(&DemoSuite, &fresh, &ms, &Options::default()).await;
+    assert_eq!(
+        r.failures,
+        vec![frame(
+            ConformanceCode::DuplicateMutant,
+            &[("mutant", "demo.no-limit")]
+        )]
+    );
+    assert_eq!(r.caught, Vec::new());
+}

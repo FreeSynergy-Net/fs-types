@@ -1,14 +1,16 @@
 [package]
 name = "fs-conformance"
-description = "The frame of every FreeSynergy conformance run: suites of rules, mutants that prove the rules can fail, reports as codes with typed parameters. Use as a dev-dependency only."
+description = "The frame of every FreeSynergy conformance run: suites of rules, mutants that prove the rules can fail, reports as codes with typed parameters. Never part of a shipped program: a dev-dependency, a dependency of a `*-testdata` crate, or optional behind the feature `conformance` (never in `default`)."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
+readme = "README.md"
 
 [dependencies]
 async-trait = "0.1"
+fs-types = { path = "../fs-types" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }

@@ -256,6 +256,7 @@ name = "fs-conformance"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "fs-types",
  "tokio",
 ]
 

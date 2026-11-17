@@ -1,11 +1,11 @@
-//! K16 of ENTWURF section 5.
+//! K16 of ENTWURF section 5 (ten codes since A3).
 use fs_conformance::{ConformanceCode, ErrorCode, message_key};
 
 /// K16: `ALL` lists every code once; names are unique kebab case; message keys are prefix and name.
 #[test]
 fn k16_all_codes() {
     let all = ConformanceCode::ALL;
-    assert_eq!(all.len(), 8);
+    assert_eq!(all.len(), 10);
     let mut names: Vec<&str> = all.iter().map(|c| c.as_str()).collect();
     names.sort_unstable();
     names.dedup();

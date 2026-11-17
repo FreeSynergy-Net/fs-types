@@ -13,6 +13,7 @@
 //! * Named place (v0.0.25): [`Location`] (JSCalendar `Location`: optional name, description, types, coordinates, relativeTo, timeZone, address, links) with [`LocationParts`].
 //!
 //! * Contact values: [`values`] ([`EmailAddress`], [`PhoneNumber`], [`ValueProblem`], trait [`ContactValue`]), valid on construction.
+//! * Failures as codes (first change after `v0.0.1`): [`coded`] ([`coded::ErrorCode`], [`coded::Coded`], [`coded::Code`], [`coded::Param`]); a code with typed parameters, never a sentence (ADR 0057).
 //! * Wire form: [`types_capnp`] (generated, committed; ADR 0040); [`SCHEMA_DIR`] is where the schema file lives, for crates that import it.
 //!
 //! Pattern: Registry (rules by kind, descriptions by name), Value object, Adapter (to the free crates and to the wire
@@ -29,6 +30,7 @@ pub const SCHEMA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/schema");
 #[rustfmt::skip]
 #[allow(clippy::all, clippy::pedantic, unused_parens, dead_code, missing_docs)]
 pub mod types_capnp;
+pub mod coded;
 pub mod values;
 
 mod address;
