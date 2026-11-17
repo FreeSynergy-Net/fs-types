@@ -120,6 +120,9 @@ fn duration_follows_the_jscalendar_grammar() {
     ] {
         assert_eq!(bad::<Duration>(t), TypeProblem::BadDuration, "{t}");
     }
+    // Nine fraction digits are the limit: ten are refused, nine read.
+    assert_eq!(bad::<Duration>("PT1.1234567891S"), TypeProblem::BadDuration);
+    assert_eq!(canon::<Duration>("PT1.123456789S"), "PT1.123456789S");
     assert_eq!(
         bad::<Duration>("PT1.12345678901S"),
         TypeProblem::BadDuration
