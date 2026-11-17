@@ -46,3 +46,14 @@ The changelog of 0.0.2 names them A1-A4 and A6; in full:
 4. Where the crate may stand (the section above: dev-dependency, `*-testdata` crate, optional behind `conformance`); description and `placement.rs` follow it.
 5. The check over the program repos (`cargo tree --workspace -e normal,build -i fs-conformance` lists only testdata crates) is a gate of fs-release, not part of this version.
 6. Before the next tag, the changelog and the repository README name `fs-conformance` (purpose, the placement rule, the help of Claude stays named).
+
+### Auf Deutsch: Bedingungen der ersten Prüfung (A1 bis A6)
+
+Das Changelog von 0.0.2 nennt A1-A4 und A6; vollständig:
+
+1. Ein Fixture-Typ als `dyn Trait` in `impl Rule<dyn Trait>` braucht `&mut (dyn Trait + 'static)` oder einen Alias; generische Regeln werden empfohlen (Hinweis in `check.rs`).
+2. `MessageFormat` ist ein gültiger Doku-Bezeichner (`clippy.toml`).
+3. `prove` prüft die Kennungen der Mutanten wie die der Regeln (Form, Doppelte) mit den Codes `mutant-id-invalid` und `duplicate-mutant`.
+4. Wo das Crate stehen darf (der Abschnitt oben: Dev-Abhängigkeit, `*-testdata`-Crate, optional hinter `conformance`); Beschreibung und `placement.rs` folgen dem.
+5. Die Prüfung über die Programm-Repos (`cargo tree --workspace -e normal,build -i fs-conformance` nennt nur Testdata-Crates) ist ein Gate von fs-release, nicht Teil dieser Version.
+6. Vor dem nächsten Tag nennen Changelog und Repository-README `fs-conformance` (Zweck, Platzierungsregel, die Hilfe von Claude bleibt genannt).
