@@ -1,0 +1,21 @@
+[package]
+name = "fs-records"
+description = "The one way every FreeSynergy program lets a frontend READ its records (ADR 0087 Nachtrag, stage E3): the trait `Records` (filter, sort, page, group, project, as the asking person), its values, size and time limits, and an in-memory double. The suite every provider runs sits behind the feature `conformance`."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[features]
+# The suite (`RecordsSuite`) and its bench. Never in `default`: fs-conformance stays out of the normal graph (review A4).
+conformance = ["dep:fs-conformance", "dep:async-trait"]
+
+[dependencies]
+fs-types = { path = "../fs-types" }
+fs-conformance = { path = "../fs-conformance", optional = true }
+async-trait = { version = "0.1", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
