@@ -116,16 +116,19 @@ impl BasicValue for Duration {
     fn canonical(&self) -> String {
         let mut out = String::from("P");
         if let Some(w) = self.weeks {
-            out.push_str(&format!("{w}W"));
+            out.push_str(&w.to_string());
+            out.push('W');
         }
         if let Some(n) = self.days {
-            out.push_str(&format!("{n}D"));
+            out.push_str(&n.to_string());
+            out.push('D');
         }
         if self.hours.or(self.minutes).or(self.seconds).is_some() {
             out.push('T');
             for (n, unit) in [(self.hours, 'H'), (self.minutes, 'M')] {
                 if let Some(n) = n {
-                    out.push_str(&format!("{n}{unit}"));
+                    out.push_str(&n.to_string());
+                    out.push(unit);
                 }
             }
             if let Some(s) = self.seconds {
