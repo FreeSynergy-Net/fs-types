@@ -8,6 +8,7 @@ use super::codes::{SuiteCode, keys};
 use super::fixture::Arrange;
 use crate::records::{RecordQuery, RecordView};
 use fs_conformance::Coded;
+use fs_types::TypeDescription;
 
 fn first(ids: &[String]) -> String {
     ids.first().cloned().unwrap_or_default()
@@ -86,6 +87,49 @@ rule!(
         }
         if call(f.records().get(&facts.data_type, &id, &[]).await)?.is_some() {
             return Err(shown());
+        }
+        Ok(())
+    }
+);
+
+/// Whether the type `data_type` of the fixture describes `command` as not supported yet.
+fn unsupported(types: &[TypeDescription], data_type: &str, command: &str) -> bool {
+    types
+        .iter()
+        .filter(|t| t.name == data_type)
+        .flat_map(|t| t.commands.iter())
+        .any(|c| c.name == command && !c.supported)
+}
+
+fn may_wrong(expected: &str, got: &[String]) -> Stop {
+    Stop::Fail(
+        Coded::new(SuiteCode::MayWrong)
+            .with_text(keys::EXPECTED, expected)
+            .with_text(keys::GOT, got.join(",")),
+    )
+}
+
+rule!(
+    /// Decision 85 (c0): `may` names ONLY rights. A command she has the right to is in `may` although the type marks it
+    /// `supported == false` and although the record is locked; one she has no right to is not. The same for the commands of
+    /// the type as a whole in `Shape::may` (decision 86).
+    MayIsRights, "records.may-rights-only", |f, cx| {
+        let facts = arrange(f, cx, Arrange::Rights)?;
+        let types = f.types();
+        for command in [&facts.right_command, &facts.type_command] {
+            if !unsupported(&types, &facts.data_type, command) {
+                return Err(Stop::Verdict(cx.missing(fs_conformance::Need::new("fixture.unsupported-command"))));
+            }
+        }
+        for id in &facts.ids {
+            let view = call(f.records().get(&facts.data_type, id, &[]).await)?.ok_or_else(|| may_wrong("record", &[]))?;
+            if !view.may.contains(&facts.right_command) || view.may.contains(&facts.no_right_command) {
+                return Err(may_wrong(&facts.right_command, &view.may));
+            }
+        }
+        let shape = call(f.records().shape(&facts.data_type).await)?;
+        if !shape.may.contains(&facts.type_command) {
+            return Err(may_wrong(&facts.type_command, &shape.may));
         }
         Ok(())
     }

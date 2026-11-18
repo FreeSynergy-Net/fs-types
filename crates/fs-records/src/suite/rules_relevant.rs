@@ -6,18 +6,18 @@
 use super::check::{Stop, arrange, call, refused, rule, wrong};
 use super::codes::SuiteCode;
 use super::fixture::Arrange;
-use crate::records::{Limits, RecordQuery, RecordsCode, SearchKind};
+use crate::records::{RecordQuery, RecordsCode, SearchKind};
 
 rule!(
     /// Every page: never `total` and `total_estimated` together; `estimate_kind` exactly when there is an estimate; the
-    /// host check (`Limits::check_page`) passes.
+    /// host check passes with the limits THE PROVIDER declares (`Records::limits`, not the default: Regel 57).
     EstimateHonest, "records.estimate-honest", |f, cx| {
         let facts = arrange(f, cx, Arrange::Five)?;
         let q = RecordQuery::new(&facts.data_type, 2);
         let page = call(f.records().find(&q).await)?;
         let mixed = page.total.is_some() && page.total_estimated.is_some();
         let kind_wrong = page.total_estimated.is_some() != page.estimate_kind.is_some();
-        if mixed || kind_wrong || Limits::default().check_page(&q, &page).is_err() {
+        if mixed || kind_wrong || f.records().limits().check_page(&q, &page).is_err() {
             let got = format!("total={:?},estimated={:?}", page.total, page.total_estimated);
             return Err(wrong(SuiteCode::EstimateWrong, "one-of-total-or-estimate", got));
         }

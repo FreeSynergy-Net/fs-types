@@ -1,4 +1,4 @@
-//! K1 (suite codes), K27-K29 of ENTWURF section 5: the suite, its proof with the 22 bench mutants, `dyn` use.
+//! K1 (suite codes), K27-K29 of ENTWURF section 5: the suite, its proof with the 23 bench mutants, `dyn` use.
 #![cfg(feature = "conformance")]
 use fs_conformance::{ErrorCode, Options, Suite, message_key, prove, run};
 use fs_records::suite::{MemoryBench, RecordsFixture, RecordsSuite, SuiteCode, bench_mutants};
@@ -12,7 +12,7 @@ fn k1_suite_codes() {
     names.sort_unstable();
     names.dedup();
     assert_eq!(names.len(), all.len());
-    assert_eq!(all.len(), 14);
+    assert_eq!(all.len(), 15);
     for c in all {
         assert_eq!(
             message_key(*c),
@@ -26,16 +26,16 @@ fn k1_suite_codes() {
     }
 }
 
-/// K27: the standard bench is conformant; 21 rules checked, none skipped.
+/// K27: the standard bench is conformant; 22 rules checked, none skipped.
 #[tokio::test]
 async fn k27_bench_is_conformant() {
     let r = run(&RecordsSuite, &mut MemoryBench::new(), &Options::default()).await;
     assert!(r.is_conformant(), "{:?}", r.failures);
-    assert_eq!(r.checked, 21);
+    assert_eq!(r.checked, 22);
     assert_eq!(r.skipped.len(), 0);
 }
 
-/// K28: the suite is proven: each of the 22 bench mutants is caught, every rule has a mutant.
+/// K28: the suite is proven: each of the 23 bench mutants is caught, every rule has a mutant.
 #[tokio::test]
 async fn k28_suite_is_proven() {
     let r = prove(
@@ -46,7 +46,7 @@ async fn k28_suite_is_proven() {
     )
     .await;
     assert!(r.is_proven(), "{:?}", r.failures);
-    assert_eq!(r.caught.len(), 22);
+    assert_eq!(r.caught.len(), 23);
 }
 
 /// K29: `dyn` use: the suite over `&mut dyn RecordsFixture`, as `&dyn Suite<MemoryBench>`, and `Box<dyn Records>`.

@@ -74,7 +74,11 @@ pub struct RecordView {
     pub hidden: Vec<Hidden>,
     /// The lock, if any.
     pub lock: Option<RecordLock>,
-    /// The record commands she may run on it now (names of the description; the program decides by her rights).
+    /// The record commands she may run on it now (names of the description). Decision 85 (c0, 18.11.2026): it names ONLY
+    /// rights, the program decides by her rights alone: a command she has the right to is in it even when the program does
+    /// not do it yet (`CommandDescription::supported == false`, the host shows it as „coming“) and even while the record is
+    /// locked (the lock is `lock`, the host shows it as a lock); a command she has no right to is never in it. Commands of the
+    /// type as a whole (`create` ...) are in `Shape::may` (decision 86).
     pub may: Vec<String>,
     /// The group key in the grouping of the query; `None` when the query has no grouping.
     pub group: Option<String>,

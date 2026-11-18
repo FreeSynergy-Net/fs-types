@@ -75,7 +75,11 @@ pub(super) fn view(
         values,
         hidden,
         lock,
-        may: r.may.clone(),
+        may: if m.has(Flaw::MayBySupported) {
+            m.only_supported(&r.may)
+        } else {
+            r.may.clone()
+        },
         group,
     }
 }
