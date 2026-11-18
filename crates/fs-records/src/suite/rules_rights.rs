@@ -128,7 +128,7 @@ rule!(
             }
         }
         let shape = call(f.records().shape(&facts.data_type).await)?;
-        if !shape.may.contains(&facts.type_command) {
+        if !shape.may.contains(&facts.type_command) || shape.may.contains(&facts.no_right_type_command) {
             return Err(may_wrong(&facts.type_command, &shape.may));
         }
         Ok(())

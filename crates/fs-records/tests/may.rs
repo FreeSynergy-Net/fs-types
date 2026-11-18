@@ -91,3 +91,35 @@ async fn k52_estimate_rule_uses_provider_limits() {
     let r = run(&RecordsSuite, &mut MemoryBench::new(), &Options::default()).await;
     assert!(r.is_conformant(), "{:?}", r.failures);
 }
+
+/// K53: each new flaw (rights ignored, dropped when locked, type `may` ignores rights) is caught by the suite rule itself.
+#[tokio::test]
+async fn k53_may_flaws_caught_by_the_rule() {
+    for flaw in [
+        Flaw::MayIgnoresRights,
+        Flaw::MayDroppedWhenLocked,
+        Flaw::TypeMayIgnoresRights,
+    ] {
+        let mut bench = MemoryBench::new();
+        bench.memory.flaw(flaw);
+        let r = run(&RecordsSuite, &mut bench, &Options::default()).await;
+        assert!(
+            r.failures
+                .iter()
+                .any(|f| f.rule.as_str() == "records.may-rights-only"),
+            "{flaw:?}: {:?}",
+            r.failures
+        );
+    }
+}
+
+/// K54: the type command without right (`export`) is a command of the type but not in `Shape::may`.
+#[tokio::test]
+async fn k54_type_command_without_right_is_absent() {
+    let mut bench = MemoryBench::new();
+    let facts = bench.arrange(Arrange::Rights).expect("rights");
+    assert_eq!(facts.no_right_type_command, "export");
+    assert!(bench.types()[0].commands.iter().any(|c| c.name == "export"));
+    let shape = bench.records().shape(&facts.data_type).await.unwrap();
+    assert!(!shape.may.contains(&"export".to_owned()));
+}

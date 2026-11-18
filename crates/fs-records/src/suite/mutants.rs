@@ -30,7 +30,7 @@ impl Mutant<MemoryBench> for FlawMutant {
     }
 }
 
-/// The 23 mutants of the bench (13 + 7 of the Nachzug 17.11. + 2 of Nachzug 2 + 1 of decision 85).
+/// The 26 mutants of the bench (13 + 7 of the Nachzug 17.11. + 2 of Nachzug 2 + 4 of decision 85/86).
 #[must_use]
 #[allow(clippy::too_many_lines)] // one line per mutant: a list, not logic
 pub fn bench_mutants() -> Vec<Box<dyn Mutant<MemoryBench>>> {
@@ -151,6 +151,21 @@ pub fn bench_mutants() -> Vec<Box<dyn Mutant<MemoryBench>>> {
         m(
             Flaw::MayBySupported,
             "records-bench.may-by-supported",
+            &["records.may-rights-only"],
+        ),
+        m(
+            Flaw::MayIgnoresRights,
+            "records-bench.may-ignores-rights",
+            &["records.may-rights-only"],
+        ),
+        m(
+            Flaw::MayDroppedWhenLocked,
+            "records-bench.may-dropped-when-locked",
+            &["records.may-rights-only"],
+        ),
+        m(
+            Flaw::TypeMayIgnoresRights,
+            "records-bench.type-may-ignores-rights",
             &["records.may-rights-only"],
         ),
     ]
