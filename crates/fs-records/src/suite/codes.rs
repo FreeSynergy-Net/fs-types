@@ -36,6 +36,8 @@ pub enum SuiteCode {
     CountWrong,
     /// Nachzug 2: a page gave an estimate as exact or the reverse (parameters `expected`, `got`).
     EstimateWrong,
+    /// Decision 85: `may` did not name a right she has, or named one she has not (parameters `expected`, `got`).
+    MayWrong,
 }
 
 impl ErrorCode for SuiteCode {
@@ -55,6 +57,7 @@ impl ErrorCode for SuiteCode {
         Self::UnreadableShown,
         Self::CountWrong,
         Self::EstimateWrong,
+        Self::MayWrong,
     ];
 
     fn as_str(self) -> &'static str {
@@ -73,6 +76,7 @@ impl ErrorCode for SuiteCode {
             Self::UnreadableShown => "unreadable-shown",
             Self::CountWrong => "count-wrong",
             Self::EstimateWrong => "estimate-wrong",
+            Self::MayWrong => "may-wrong",
         }
     }
 }

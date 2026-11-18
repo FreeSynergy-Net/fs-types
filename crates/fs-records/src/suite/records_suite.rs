@@ -41,6 +41,8 @@ impl<F: RecordsFixture + ?Sized> Suite<F> for RecordsSuite {
             // Nachzug 2 (relevant)
             Box::new(rules_relevant::EstimateHonest),
             Box::new(rules_relevant::RelevantRefused),
+            // Decision 85/86 (18.11.)
+            Box::new(rules_rights::MayIsRights),
         ]
     }
 }

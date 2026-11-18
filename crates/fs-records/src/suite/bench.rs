@@ -2,12 +2,12 @@
 //!
 //! Pattern: Fixture over a Fake object.
 
-use fs_types::{BasicType, CommandDescription, FieldDescription, TypeDescription};
+use fs_types::{BasicType, CommandDescription, CommandKind, FieldDescription, TypeDescription};
 
 use super::fixture::{Arrange, Facts, RecordsFixture};
 use crate::records::{
-    Group, GroupingDescription, LockKind, MemoryRecords, OrderDescription, RecordLock, Records,
-    Row, SearchKind, SearchPolicy, Shape, path,
+    Group, GroupingDescription, Limits, LockKind, MemoryRecords, OrderDescription, RecordLock,
+    Records, Row, SearchKind, SearchPolicy, Shape, path,
 };
 
 const NOTE: &str = "Note";
@@ -30,6 +30,26 @@ fn note_type() -> TypeDescription {
         .field(FieldDescription::new("secret", BasicType::Text).label("note.secret"))
         .field(FieldDescription::new("body", BasicType::MultilineText).label("note.body"))
         .command(CommandDescription::standard_find("note.find", NOTE))
+        // Decision 85: `edit` is done, `archive` is listed but not there yet; `create` is done, `import` is not there yet.
+        .command(CommandDescription::new(
+            "edit",
+            CommandKind::Change,
+            "note.edit",
+        ))
+        .command(
+            CommandDescription::new("archive", CommandKind::Change, "note.archive").unsupported(),
+        )
+        .command(CommandDescription::new(
+            "delete",
+            CommandKind::Delete,
+            "note.delete",
+        ))
+        .command(CommandDescription::new(
+            "create",
+            CommandKind::Create,
+            "note.create",
+        ))
+        .command(CommandDescription::new("import", CommandKind::Other, "note.import").unsupported())
 }
 
 fn note_shape() -> Shape {
@@ -73,6 +93,8 @@ fn note_shape() -> Shape {
             SearchKind::Complete,
         )
         .unwrap_or_else(|_| SearchPolicy::complete_only()),
+        // The person may create and import (import is not there yet: still named, decision 86).
+        may: vec!["create".into(), "import".into()],
     }
 }
 
@@ -94,6 +116,16 @@ impl MemoryBench {
         Self {
             memory: MemoryRecords::new(note_type(), note_shape(), lanes.to_vec()),
         }
+    }
+}
+
+impl MemoryBench {
+    /// A bench whose provider declares other limits (what it tells with `Records::limits`).
+    #[must_use]
+    pub fn with_limits(limits: Limits) -> Self {
+        let mut bench = Self::new();
+        bench.memory = bench.memory.with_limits(limits);
+        bench
     }
 }
 
@@ -165,6 +197,21 @@ impl RecordsFixture for MemoryBench {
                 m.push(row("u2", "yours", "todo", "b"));
                 vec!["u1".into(), "u2".into()]
             }
+            Arrange::Rights => {
+                // `archive` is not supported yet, `edit` is; no right to `delete`.
+                m.push(row("r1", "mine", "todo", "a").allowed(&["edit", "archive"]));
+                m.push(
+                    row("r2", "held", "doing", "a")
+                        .allowed(&["edit", "archive"])
+                        .locked(RecordLock {
+                            kind: LockKind::Claimed,
+                            by: Some("urn:uuid:00000000-0000-7000-8000-0000000000aa".into()),
+                            until_ms: Some(1_800_000_000_000),
+                            reason: None,
+                        }),
+                );
+                vec!["r1".into(), "r2".into()]
+            }
         };
         let probe = if situation == Arrange::Hidden {
             "s3cr3t"
@@ -185,6 +232,9 @@ impl RecordsFixture for MemoryBench {
             hidden: "secret".into(),
             grouping: "lane".into(),
             values,
+            right_command: "archive".into(),
+            type_command: "import".into(),
+            no_right_command: "delete".into(),
         })
     }
 

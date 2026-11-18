@@ -10,7 +10,7 @@ Every program offers the trait `Records` next to each capability (beside `TypeCa
 
 Size and time limits (`Limits`) are settings: the program gives a default, the instance sets a ceiling and an admin may lower or raise the values below it; a value above the ceiling is refused (`Limits::admit`). `within` bounds every call in time.
 
-`MemoryRecords` is the double for tests. With the feature `conformance` (never in `default`) the crate ships `RecordsSuite` (13 rules) and `bench_mutants` (13 deliberate faults that the suite must catch); `fs-conformance` is therefore never in the normal dependency graph of a shipped program.
+`MemoryRecords` is the double for tests. With the feature `conformance` (never in `default`) the crate ships `RecordsSuite` (22 rules) and `bench_mutants` (23 deliberate faults that the suite must catch); `fs-conformance` is therefore never in the normal dependency graph of a shipped program.
 
 Writing is a later stage (E4w) and its own trait. Written with the help of Claude (Anthropic).
 

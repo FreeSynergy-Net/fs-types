@@ -19,6 +19,10 @@ pub enum Arrange {
     Locked,
     /// `ids[0]` exists but she may not read it; `ids[1]` she may.
     Unreadable,
+    /// Decision 85: `ids[0]` has a record command (`Facts::right_command`) she may run but the program does not do yet
+    /// (`supported == false` in the description), and `ids[1]` is locked with the same right; the type has a type command
+    /// (`Facts::type_command`) she may run, also not supported yet; she has NO right to the command `Facts::no_right_command`.
+    Rights,
 }
 
 /// Where the rule looks after [`RecordsFixture::arrange`].
@@ -40,6 +44,12 @@ pub struct Facts {
     pub grouping: String,
     /// Nachzug 17.11.: the value of `text` of each id, index-aligned with `ids` (situation `Five`: five different values).
     pub values: Vec<String>,
+    /// Situation `Rights`: a record command she has the right to and the type marks `supported == false`.
+    pub right_command: String,
+    /// Situation `Rights`: a type command she has the right to and the type marks `supported == false`.
+    pub type_command: String,
+    /// Situation `Rights`: a record command she has no right to.
+    pub no_right_command: String,
 }
 
 /// The provider under test.

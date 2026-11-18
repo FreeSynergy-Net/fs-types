@@ -44,6 +44,7 @@ pub fn shape(search: SearchPolicy) -> Shape {
             manual: true,
         }],
         search,
+        may: vec![],
     }
 }
 

@@ -68,6 +68,9 @@ pub enum Flaw {
     EstimateAsExact,
     /// Nachzug 2: `relevant` is answered as unsupported before the policy is asked.
     RelevantBeforePolicy,
+    /// Decision 85: `may` (of a record and of the type) is filtered by `supported`: a command she has the right to but the
+    /// program does not do yet is dropped.
+    MayBySupported,
 }
 
 /// One data type in memory.
@@ -130,6 +133,19 @@ impl MemoryRecords {
     pub(super) fn has(&self, flaw: Flaw) -> bool {
         self.flaws.borrow().contains(&flaw)
     }
+    /// Flaw `MayBySupported`: keeps the names of commands the description marks as supported.
+    pub(super) fn only_supported(&self, names: &[String]) -> Vec<String> {
+        names
+            .iter()
+            .filter(|n| {
+                self.description
+                    .commands
+                    .iter()
+                    .any(|c| &c.name == *n && c.supported)
+            })
+            .cloned()
+            .collect()
+    }
     pub(super) fn type_check(&self, data_type: &str) -> Result<(), Coded<RecordsCode>> {
         if data_type == self.description.name {
             Ok(())
@@ -175,6 +191,9 @@ impl MemoryRecords {
     fn shape_now(&self, data_type: &str) -> Result<Shape, Coded<RecordsCode>> {
         self.type_check(data_type)?;
         let mut shape = self.shape.clone();
+        if self.has(Flaw::MayBySupported) {
+            shape.may = self.only_supported(&shape.may);
+        }
         if self.has(Flaw::ShapeLies) {
             let field = Some(path("no-such-field"));
             shape.groupings.push(GroupingDescription {

@@ -46,6 +46,11 @@ pub struct Shape {
     pub orders: Vec<OrderDescription>,
     /// Nachzug 17.11.: the search kinds it allows and its default (wire: `TypeDescription.searchKinds/searchDefault`).
     pub search: SearchPolicy,
+    /// Decision 85/86 (c0, 18.11.2026): the commands of the TYPE (`create`, `import` ...) the asking person may run. Like
+    /// `RecordView::may` it names ONLY rights: independent of `CommandDescription::supported` and of any lock. A command she
+    /// has the right to but the program does not do yet IS in it (the host shows it as „coming“); one she has no right to is
+    /// NOT in it (the host does not show it at all). Wire proposal: `TypeDescription.may @3`, the owner assigns the ordinal.
+    pub may: Vec<String>,
 }
 
 /// One group now.

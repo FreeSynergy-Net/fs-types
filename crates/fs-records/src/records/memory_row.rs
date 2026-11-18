@@ -23,7 +23,7 @@ pub struct Row {
     pub lock: Option<RecordLock>,
     /// The group of a grouping the program computes (one without `field`).
     pub group: Option<String>,
-    /// The record commands she may run.
+    /// The record commands she has the right to run (decision 85: rights only, whatever `supported` or the lock say).
     pub may: Vec<String>,
 }
 
@@ -55,6 +55,12 @@ impl Row {
     #[must_use]
     pub fn in_scope(mut self, scope: &str) -> Self {
         self.scope = Some(scope.to_owned());
+        self
+    }
+    /// She has the right to run these record commands (names), whatever `supported` or the lock say.
+    #[must_use]
+    pub fn allowed(mut self, commands: &[&str]) -> Self {
+        self.may = commands.iter().map(|c| (*c).to_owned()).collect();
         self
     }
     /// The person may not read it.
