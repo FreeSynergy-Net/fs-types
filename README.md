@@ -8,7 +8,7 @@ What is different here: the values and their wire schema are one library with no
 
 ## What it can do today
 
-Latest tag: `v0.0.3`.
+Latest tag: `v0.0.4`.
 
 - Check, normalise and suggest for the basic types of ADR 0066 (`BasicValue`, `BasicRules`), with problem codes instead of sentences.
 - Shared value types of the topic crates: `Utc`, `LocalDateTime`, `Zone`, `PersonRef`, `Attendee`, `ContactAddress`, `ObjectId`, `Revision`, `MediaType`, `FileRef`, `Page`, `PageCursor`, `GeoPoint`, `PositionFix`, `Location`.
@@ -33,7 +33,7 @@ FreeSynergy is a family of programs that are free for everyone, forever, and tha
 - Workspace `fs-types`: the library crate `fs-types` (`crates/fs-types`), `fs-conformance` (`crates/fs-conformance`, the conformance frame) and `regenerate` (`crates/regenerate`, not published).
 - Up to fs-interfaces v0.0.26 this code was part of the repository fs-interfaces (crate `fs-types`, schema `types.capnp`, module `values`); the history of those paths is kept. `fs_interfaces::values::X` is now `fs_types::values::X` (also `fs_types::X`), `fs_interfaces::types_capnp` is now `fs_types::types_capnp`. The decision is ADR 0093 (accepted, strategy 2026-11-16).
 - The generated code `src/types_capnp.rs` is committed (ADR 0040); `cargo run -p regenerate` rewrites it with our own compiler (fs-capnpc, tag v0.0.1, pinned). The tests `tests/generated_matches_official.rs` compare it with our compiler and with the official one.
-- Use it by git tag: `fs-types = { git = "https://github.com/FreeSynergy/fs-types", tag = "v0.0.3" }`. Every crate in one build must use the same tag, or the lock holds two copies of the types.
+- Use it by git tag: `fs-types = { git = "https://github.com/FreeSynergy/fs-types", tag = "v0.0.4" }`. Every crate in one build must use the same tag, or the lock holds two copies of the types.
 - Gates: `cargo fmt --check`, `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings -W clippy::pedantic`, `cargo test --workspace --all-features --locked`.
 - Licence: MIT OR Apache-2.0.
 
