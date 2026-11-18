@@ -50,6 +50,8 @@ pub struct Facts {
     pub type_command: String,
     /// Situation `Rights`: a record command she has no right to.
     pub no_right_command: String,
+    /// Situation `Rights`: a command of the type as a whole she has no right to (it is in `Shape::may` of nobody).
+    pub no_right_type_command: String,
 }
 
 /// The provider under test.

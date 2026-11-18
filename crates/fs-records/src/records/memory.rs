@@ -71,6 +71,12 @@ pub enum Flaw {
     /// Decision 85: `may` (of a record and of the type) is filtered by `supported`: a command she has the right to but the
     /// program does not do yet is dropped.
     MayBySupported,
+    /// Decision 85: `may` of a record names every record command of the type, whatever her rights are.
+    MayIgnoresRights,
+    /// Decision 85: a locked record has an empty `may` (the lock is taken for a missing right).
+    MayDroppedWhenLocked,
+    /// Decision 86: `Shape::may` names every command of the type as a whole, whatever her rights are.
+    TypeMayIgnoresRights,
 }
 
 /// One data type in memory.
@@ -193,6 +199,14 @@ impl MemoryRecords {
         let mut shape = self.shape.clone();
         if self.has(Flaw::MayBySupported) {
             shape.may = self.only_supported(&shape.may);
+        }
+        if self.has(Flaw::TypeMayIgnoresRights) {
+            shape.may = self
+                .description
+                .type_commands()
+                .iter()
+                .map(|c| c.name.clone())
+                .collect();
         }
         if self.has(Flaw::ShapeLies) {
             let field = Some(path("no-such-field"));

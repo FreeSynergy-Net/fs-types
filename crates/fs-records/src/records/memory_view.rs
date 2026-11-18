@@ -75,11 +75,24 @@ pub(super) fn view(
         values,
         hidden,
         lock,
-        may: if m.has(Flaw::MayBySupported) {
-            m.only_supported(&r.may)
-        } else {
-            r.may.clone()
-        },
+        may: record_may(m, r),
         group,
+    }
+}
+
+/// The `may` of one record: her rights, unless a flaw is on (decision 85).
+fn record_may(m: &MemoryRecords, r: &Row) -> Vec<String> {
+    if m.has(Flaw::MayIgnoresRights) {
+        m.description
+            .record_commands()
+            .iter()
+            .map(|c| c.name.clone())
+            .collect()
+    } else if m.has(Flaw::MayDroppedWhenLocked) && r.lock.is_some() {
+        Vec::new()
+    } else if m.has(Flaw::MayBySupported) {
+        m.only_supported(&r.may)
+    } else {
+        r.may.clone()
     }
 }

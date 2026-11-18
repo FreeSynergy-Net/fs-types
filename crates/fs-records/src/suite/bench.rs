@@ -50,6 +50,12 @@ fn note_type() -> TypeDescription {
             "note.create",
         ))
         .command(CommandDescription::new("import", CommandKind::Other, "note.import").unsupported())
+        // a type command she has NO right to: never in `Shape::may`
+        .command(CommandDescription::new(
+            "export",
+            CommandKind::Other,
+            "note.export",
+        ))
 }
 
 fn note_shape() -> Shape {
@@ -235,6 +241,7 @@ impl RecordsFixture for MemoryBench {
             right_command: "archive".into(),
             type_command: "import".into(),
             no_right_command: "delete".into(),
+            no_right_type_command: "export".into(),
         })
     }
 
