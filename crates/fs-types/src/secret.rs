@@ -2,7 +2,7 @@
 //!
 //! Pattern: Newtype with a guard: `Debug` prints a placeholder, there is no `Display`, no `Clone`, no `Serialize`, and the
 //! value is reachable only through [`Secret::expose_secret`], a call that is easy to find and to forbid (`clippy.toml`,
-//! `disallowed-methods`, see `DESIGN.md`). On drop the value is overwritten with zeros (`zeroize`, RustCrypto).
+//! `disallowed-methods`, see `DESIGN.md`). On drop the value is overwritten with zeros (`zeroize`, by the `RustCrypto` project).
 //!
 //! It is for credentials, keys and tokens: what must never reach an answer, an error, a log line or an export. It does not
 //! hide a value that was copied out before (`expose_secret` gives a reference: do not clone it into a `String` that outlives
