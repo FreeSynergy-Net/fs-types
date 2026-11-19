@@ -2,6 +2,13 @@
 
 Version = tag.
 
+## 0.0.5
+
+Unreleased.
+
+- New basic types: `Time` / `BasicType::Time` (`@21`; RFC 3339 `partial-time`: `HH:MM:SS` with an optional fraction of 1-9 digits, no zone, no `T`, leap second refused; canonical text without trailing zeros of the fraction), `Color` / `BasicType::Color` (`@22`; CSS Color Level 4 hex `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, sRGB with alpha; canonical lower case, long form, alpha only when not opaque; named colours and functions are refused). New codes `TypeProblem::BadTimeOfDay` (`time-of-day.bad`) and `BadColor` (`color.bad`); `BasicRules::standard()` knows both. `types_capnp.rs` regenerated (append only). New `Secret<T>` (not a kind): `Debug` and `Display` print `<hidden>`, no `Serialize`/`Hash`/`PartialEq`/`Deref`, the value only through `expose()` / `into_exposed()`, `ct_eq` for bytes; no wiping on drop (no `zeroize` dependency allowed yet). No new dependency. `money`, `quantity`, `recurrence` are NOT in this version (request: ISO 4217, UCUM, RFC 5545 / RFC 8984). Written with the help of Claude (Anthropic).
+- Auf Deutsch: Neue Grundtypen `Time` (Uhrzeit nach RFC 3339 `partial-time`, streng, ohne Zone, ohne Schaltsekunde, `BasicType::Time` = `@21`) und `Color` (Farbe, CSS-Color-Level-4-Hex mit Alpha, kanonisch klein in Langform, `BasicType::Color` = `@22`); neue Codes `BadTimeOfDay` und `BadColor`; die Wire-Datei wurde nur angehängt. Neu `Secret<T>` (kein Typ, ein Umschlag): `Debug`/`Display` zeigen nie den Wert (`<hidden>`), kein `Serialize`, kein Vergleich mit `==`, der Wert nur über `expose()`; wird beim Freigeben NICHT überschrieben (keine `zeroize`-Abhängigkeit erlaubt). Geld, Menge und Wiederholung kommen nicht in dieser Version (Antrag: ISO 4217, UCUM, RFC 5545). Geschrieben mit Hilfe von Claude (Anthropic).
+
 ## 0.0.4
 
 Released 2026-11-18.

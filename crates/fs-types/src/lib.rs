@@ -6,6 +6,9 @@
 //! * Type description: [`TypeDescription`] (fields, commands), the trait [`DescribesType`] a program implements for each
 //!   data type it owns, and [`TypeRegistry`] that collects them and answers the `TypeCatalog` contract.
 //!
+//! * Since 0.0.5: [`Time`] (time of day, RFC 3339 `partial-time`), [`Color`] (CSS Color Level 4 hex, sRGB with alpha), and
+//!   [`Secret`] (a wrapper that never prints or serialises its value; not a `BasicType`).
+//!
 //! * Shared types of the topic crates (ADR 0085): [`Utc`], [`LocalDateTime`], [`Zone`], [`PersonRef`], [`PersonArt`], [`Attendee`],
 //!   [`ContactAddress`], [`ObjectId`], [`Revision`], [`MediaType`], [`FileRef`], [`Page`], [`PageCursor`],
 //!   [`Capabilities`], [`Problem`] (DESIGN.md, "Shared types").
@@ -35,6 +38,7 @@ pub mod values;
 
 mod address;
 mod choice;
+mod color;
 mod contact;
 mod datetime;
 pub mod describe;
@@ -57,11 +61,14 @@ mod person;
 mod place;
 mod problem;
 mod rule;
+mod secret;
 mod text;
+mod time_of_day;
 mod value;
 
 pub use address::Address;
 pub use choice::Choice;
+pub use color::Color;
 pub use datetime::{Date, DateTime};
 pub use describe::{
     CommandDescription, CommandKind, DescribesType, DescriptionProblem, Edit, FieldDescription,
@@ -86,7 +93,9 @@ pub use person::{Attendee, ContactAddress, PersonArt, PersonRef};
 pub use place::Place;
 pub use problem::TypeProblem;
 pub use rule::{BasicRules, Rule};
+pub use secret::Secret;
 pub use text::{MultilineText, Text};
+pub use time_of_day::Time;
 pub use types_capnp::{AddressKind, BasicType, NameKind};
 pub use value::BasicValue;
 pub use values::{ContactValue, EmailAddress, PhoneNumber, ValueProblem};

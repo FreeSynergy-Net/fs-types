@@ -11,8 +11,9 @@ use crate::types_capnp::BasicType;
 use crate::values::{EmailAddress, PhoneNumber};
 
 use crate::{
-    Address, BasicValue, Choice, Date, DateTime, Duration, Flag, Image, Integer, Key, Keywords,
-    Language, Link, MultilineText, Name, Place, Reference, Text, TypeProblem, Whole,
+    Address, BasicValue, Choice, Color, Date, DateTime, Duration, Flag, Image, Integer, Key,
+    Keywords, Language, Link, MultilineText, Name, Place, Reference, Text, Time, TypeProblem,
+    Whole,
 };
 
 /// The rules of one basic type, object safe.
@@ -100,6 +101,8 @@ impl BasicRules {
             boxed::<Duration>(),
             boxed::<Flag>(),
             boxed::<Whole>(),
+            boxed::<Time>(),
+            boxed::<Color>(),
         ];
         Self {
             text: boxed::<Text>(),
