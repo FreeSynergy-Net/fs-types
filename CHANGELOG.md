@@ -2,6 +2,11 @@
 
 Version = tag.
 
+## Unreleased
+
+- New `Secret<T: Zeroize>` (module `secret`, re-exported): a value that cannot be printed (`Debug` says `Secret(<hidden>)`, also in `Option`, `Vec` and `{:#?}`), shown with `{}`, cloned or serialised (compile_fail doctests; the serialisation one is paired with a passing doctest that proves the bound compiles), is wiped when dropped (`zeroize`), and is reachable only through `expose_secret()`, the one call a lint or a text search can find. New dependency `zeroize` 1.9 (RustCrypto, `Apache-2.0 OR MIT`, `default-features = false`, feature `alloc`; the lock pins the exact version); dev-dependencies `serde`/`serde_json` for the doctests only (`MIT OR Apache-2.0`). Not a vault: a value that was copied out before, moved, or swapped to disk is not wiped. There are two older wrappers that this one replaces over time: `Password` in `fs-messages-mail` (`zeroize::Zeroizing`, redacting `Debug` and `Display`, `Clone`) and `Secret` in `fs-broadcast-core` (no wipe). Recommended in every program: `clippy.toml` `disallowed-methods = [{ path = "fs_types::Secret::expose_secret", reason = "name the place" }]` with `#[allow]` only in the named places (the vault, the store driver, the transport).
+- Auf Deutsch: Neu `Secret<T>`: ein Wert, der sich nicht ausgeben (`Debug` zeigt `Secret(<hidden>)`), nicht mit `{}` zeigen, nicht klonen und nicht serialisieren laesst (compile_fail-Doctests) und beim Verwerfen ueberschrieben wird (`zeroize`); Zugriff nur ueber `expose_secret()`.
+
 ## 0.0.4
 
 Released 2026-11-18.

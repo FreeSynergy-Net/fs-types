@@ -57,6 +57,7 @@ mod person;
 mod place;
 mod problem;
 mod rule;
+mod secret;
 mod text;
 mod value;
 
@@ -86,6 +87,7 @@ pub use person::{Attendee, ContactAddress, PersonArt, PersonRef};
 pub use place::Place;
 pub use problem::TypeProblem;
 pub use rule::{BasicRules, Rule};
+pub use secret::Secret;
 pub use text::{MultilineText, Text};
 pub use types_capnp::{AddressKind, BasicType, NameKind};
 pub use value::BasicValue;

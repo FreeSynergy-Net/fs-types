@@ -70,3 +70,14 @@ Candidate `calcard` 0.3.14 (Stalwart Labs; `Apache-2.0 OR MIT`; first released 2
 * Language: well-formed only, the IANA subtag registry is not consulted. Address: country code checked for shape, not against the ISO 3166-1 list. Place: points only, see `GeoPoint` for the plain coordinate (no `GeoJSON` shapes; unknown `geo:` parameters are dropped; the poles are not canonicalised). Key: OpenPGP fingerprints only (no SSH, age, X.509). Phone and e-mail: no existence check (a network matter).
 * Suggestions: phone, date, date-time, place, key, name, address, image, text offer none (`suggest` returns an empty list on purpose).
 * Components (`input`, `display`, `compact`, `cell`) per basic type are thread C's, in `fs-components`; nothing of the look is here.
+
+## Secret<T> (unreleased)
+
+`Secret<T: Zeroize>` is the one type for credentials, keys and tokens in the Rust code of every program (layer 0, so that `fs-objects`,
+the programs and the tools of `fs-interfaces` can use it without a new dependency chain). Why here and not in a program: two programs already wrote
+their own (`Password` in `fs-messages-mail`, `Secret` in `fs-broadcast-core`), the rule is the same everywhere, and a type that keeps a secret out of
+every answer, log and export has to be the same type everywhere to be searched for. Form: no `derive`, hand-written `Debug`, no `Display`, no
+`Clone`, no `Serialize`; the value is wiped on drop; `expose_secret()` is the only door. How it is enforced without trust: `compile_fail`
+doctests here; in a program the `disallowed-methods` entry named in the CHANGELOG, `#[allow]` only in named modules; and the canary test of
+`fs-mcp` (a marker planted in a `Secret` must not come out of any answer, error text or log). What it does not do: stop a copy made
+before (`expose_secret().clone()`), or a swap to disk.
