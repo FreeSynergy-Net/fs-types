@@ -70,6 +70,10 @@ pub enum TypeProblem {
     BadDuration,
     /// Not a yes/no value (`true`, `false`, `yes`, `no`).
     BadFlag,
+    /// Not a time of day (RFC 3339 `partial-time`: `HH:MM:SS` with an optional fraction of one to nine digits).
+    BadTimeOfDay,
+    /// Not a colour: `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa` (CSS Color Level 4 hex notation).
+    BadColor,
 }
 
 impl TypeProblem {
@@ -103,6 +107,8 @@ impl TypeProblem {
             Self::BadNumber => "number.bad",
             Self::BadDuration => "duration.bad",
             Self::BadFlag => "flag.bad",
+            Self::BadTimeOfDay => "time-of-day.bad",
+            Self::BadColor => "color.bad",
         }
     }
 }

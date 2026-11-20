@@ -2,7 +2,12 @@
 
 Version = tag.
 
-## Unreleased
+## 0.0.5
+
+Unreleased.
+
+- New basic types: `Time` / `BasicType::Time` (`@21`; RFC 3339 `partial-time`: `HH:MM:SS` with an optional fraction of 1-9 digits, no zone, no `T`, leap second refused; canonical text without trailing zeros of the fraction), `Color` / `BasicType::Color` (`@22`; CSS Color Level 4 hex `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, sRGB with alpha; canonical lower case, long form, alpha only when not opaque; named colours and functions are refused). New codes `TypeProblem::BadTimeOfDay` (`time-of-day.bad`) and `BadColor` (`color.bad`); `BasicRules::standard()` knows both. `types_capnp.rs` regenerated (append only). No new dependency. `money`, `quantity`, `recurrence` are NOT in this version (request: ISO 4217, UCUM, RFC 5545 / RFC 8984).
+- Auf Deutsch: Neue Grundtypen `Time` (Uhrzeit nach RFC 3339 `partial-time`, streng, ohne Zone, ohne Schaltsekunde, `BasicType::Time` = `@21`) und `Color` (Farbe, CSS-Color-Level-4-Hex mit Alpha, kanonisch klein in Langform, `BasicType::Color` = `@22`); neue Codes `BadTimeOfDay` und `BadColor`; die Wire-Datei wurde nur angehängt. Geld, Menge und Wiederholung kommen nicht in dieser Version.
 
 - New `Secret<T: Zeroize>` (module `secret`, re-exported): a value that cannot be printed (`Debug` says `Secret(<hidden>)`, also in `Option`, `Vec` and `{:#?}`), shown with `{}`, cloned or serialised (compile_fail doctests; the serialisation one is paired with a passing doctest that proves the bound compiles), is wiped when dropped (`zeroize`), and is reachable only through `expose_secret()`, the one call a lint or a text search can find. New dependency `zeroize` 1.9 (RustCrypto, `Apache-2.0 OR MIT`, `default-features = false`, feature `alloc`; the lock pins the exact version); dev-dependencies `serde`/`serde_json` for the doctests only (`MIT OR Apache-2.0`). Not a vault: a value that was copied out before, moved, or swapped to disk is not wiped. There are two older wrappers that this one replaces over time: `Password` in `fs-messages-mail` (`zeroize::Zeroizing`, redacting `Debug` and `Display`, `Clone`) and `Secret` in `fs-broadcast-core` (no wipe). Recommended in every program: `clippy.toml` `disallowed-methods = [{ path = "fs_types::Secret::expose_secret", reason = "name the place" }]` with `#[allow]` only in the named places (the vault, the store driver, the transport).
 - Auf Deutsch: Neu `Secret<T>`: ein Wert, der sich nicht ausgeben (`Debug` zeigt `Secret(<hidden>)`), nicht mit `{}` zeigen, nicht klonen und nicht serialisieren laesst (compile_fail-Doctests) und beim Verwerfen ueberschrieben wird (`zeroize`); Zugriff nur ueber `expose_secret()`.

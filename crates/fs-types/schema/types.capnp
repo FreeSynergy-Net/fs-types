@@ -40,7 +40,9 @@ enum BasicType {
   duration      @18;   # RFC 8984 duration (ISO 8601 subset): `P1W`, `P1DT2H30M`, `PT0.5S`; no years or months
   flag          @19;   # yes/no, canonical `true` / `false`
   whole         @20;   # whole number from 0 up (not negative), canonical decimal
-  # Append new kinds here (onlineService, timeZone, recurrence, quantity, money, colour, sound, video,
+  time          @21;   # RFC 3339 partial-time (HH:MM:SS, optional fraction of 1-9 digits), no zone; canonical without trailing zeros
+  color         @22;   # CSS Color Level 4 hex, sRGB: #rgb #rgba #rrggbb #rrggbbaa; canonical lower case, long form, alpha only if not opaque
+  # Append new kinds here (onlineService, timeZone, recurrence, quantity, money, sound, video,
   # formatted text ... are in map.md and still to come).
 }
 

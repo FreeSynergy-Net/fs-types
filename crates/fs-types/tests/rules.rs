@@ -26,6 +26,8 @@ fn every_known_kind_has_its_own_rule() {
         BasicType::Duration,
         BasicType::Flag,
         BasicType::Whole,
+        BasicType::Time,
+        BasicType::Color,
     ] {
         assert_eq!(rules.rule(k).kind(), k);
     }
