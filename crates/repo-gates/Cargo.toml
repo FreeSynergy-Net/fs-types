@@ -1,0 +1,8 @@
+[package]
+name = "repo-gates"
+description = "Checks of this repository itself (version = tag, path dependency versions, licence copies, placement of fs-conformance). They read the repository root, so they live here and never in a published .crate"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false

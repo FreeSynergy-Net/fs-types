@@ -18,7 +18,7 @@ Never in the normal dependency graph of a shipped program. Allowed:
 2. a normal dependency of a `*-testdata` crate (the fakes and suites of a topic);
 3. `optional = true` behind a feature `conformance` that is in no `default`.
 
-`tests/placement.rs` checks the members of this workspace (also a renamed dependency); the check over the program repos is a gate of fs-release (`cargo tree -e normal,build -i fs-conformance`).
+`crates/repo-gates/tests/placement.rs` checks the members of the repository workspace (also a renamed dependency); the check over the program repos is a gate of fs-release (`cargo tree -e normal,build -i fs-conformance`).
 
 ## Writing rules
 
@@ -43,7 +43,7 @@ The changelog of 0.0.2 names them A1-A4 and A6; in full:
 1. A fixture type written as `dyn Trait` in `impl Rule<dyn Trait>` needs `&mut (dyn Trait + 'static)` or an alias; generic rules are recommended (doc hint in `check.rs`).
 2. `MessageFormat` is a valid doc identifier (`clippy.toml`).
 3. `prove` checks the ids of mutants like those of rules (form, doubles) with the codes `mutant-id-invalid` and `duplicate-mutant`.
-4. Where the crate may stand (the section above: dev-dependency, `*-testdata` crate, optional behind `conformance`); description and `placement.rs` follow it.
+4. Where the crate may stand (the section above: dev-dependency, `*-testdata` crate, optional behind `conformance`); description and `repo-gates/tests/placement.rs` follow it.
 5. The check over the program repos (`cargo tree --workspace -e normal,build -i fs-conformance` lists only testdata crates) is a gate of fs-release, not part of this version.
 6. Before the next tag, the changelog and the repository README name `fs-conformance` (purpose, the placement rule, the help of Claude stays named).
 

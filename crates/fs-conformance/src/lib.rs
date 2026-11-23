@@ -8,7 +8,7 @@
 //!
 //! Where it may stand (condition O1, made exact by decision b7, 17.11.): never in the normal graph of a shipped program.
 //! Allowed are `[dev-dependencies]`, a normal dependency of a `*-testdata` crate, and `optional = true` behind the feature
-//! `conformance`, which is in no `default`. `tests/placement.rs` checks this in this workspace.
+//! `conformance`, which is in no `default`. `crates/repo-gates/tests/placement.rs` checks this in the repository.
 //!
 //! Rules of the frame:
 //! - A skipped rule is never a passed rule: it is listed in [`Report::skipped`] with the [`Need`] that was missing.
