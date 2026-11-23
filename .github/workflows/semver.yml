@@ -6,7 +6,9 @@
 # says "no baseline: first registry version"; version present = compared with it; registry not reachable = RED with its
 # own text. Red while fs-crates does not exist or has no first run is RIGHT, not a reason for an exception.
 # `selftest` is the permanent counter-proof (the action has none for the real tool): it applies a small mutant (a public
-# method made private) and FAILS when cargo-semver-checks stays green on it (a tool that cannot go red is no gate).
+# method made private) and a second one (a new variant in the exhaustive hand-written enum `ZoneKind`, ADR 0093 3a
+# no. 4: the log must say `enum_variant_added`); it FAILS when cargo-semver-checks stays green on either (a tool that
+# cannot go red is no gate). Both compare HEAD with the mutated tree (`--baseline-rev HEAD`), so no registry is needed.
 # Both run on every tag, on every unreviewed/* push and by hand.
 name: semver
 on:
@@ -73,4 +75,19 @@ jobs:
             echo "selftest ok: the mutant was detected (rc=$rc, lint inherent_method_missing)"
           else
             echo "selftest FAILED: the mutant was NOT detected as a break (rc=$rc)"; exit 1
+          fi
+      - name: mutant 2 (a new variant in the exhaustive enum ZoneKind must be red, ADR 0093 3a no. 4)
+        env:
+          SEMVER: ${{ steps.tool.outputs.semver-checks }}
+        run: |
+          set +e -u
+          git checkout -- .
+          sed -i '/^pub enum ZoneKind {/,/^}/ s/^    Custom,$/    Custom,\n    ExtraMutant,/' crates/fs-types/src/moment.rs
+          git diff --quiet && { echo "selftest broken: the mutant did not apply"; exit 2; }
+          "$SEMVER" semver-checks check-release --release-type minor --baseline-rev HEAD -p fs-types 2>&1 | tee "$RUNNER_TEMP/mutant2.log"
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ] && grep -q 'enum_variant_added' "$RUNNER_TEMP/mutant2.log"; then
+            echo "selftest ok: the new variant was detected (rc=$rc, lint enum_variant_added)"
+          else
+            echo "selftest FAILED: the new variant in ZoneKind was NOT detected as a break (rc=$rc)"; exit 1
           fi

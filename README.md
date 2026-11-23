@@ -20,30 +20,30 @@ Latest tag: `v0.0.4`.
 
 ## What is not there yet
 
-- Not published on crates.io; use it by git tag.
+- Not published on crates.io; use it from the registry `freesynergy` (see "For developers"). Until the first registry entry exists, 0.0.7 cannot be fetched.
 - The `TypeCatalog` server is not here (it is transport and moves to fs-rpc) and the provider rule `Capabilities` stays in fs-interfaces (the plain list `Capabilities` in this crate stays for now; how the two relate is open).
 - The shared stand-ins for actor kind, bot reference and word code come in a later tag.
 
 ## Part of FreeSynergy
 
-FreeSynergy is a family of programs that are free for everyone, forever, and that keep your data yours. The documentation, the manifesto and the overall plan live in [fs-documentation](https://github.com/FreeSynergy/fs-documentation). Written with the help of Claude (Anthropic).
+FreeSynergy is a family of programs that are free for everyone, forever, and that keep your data yours. The documentation, the manifesto and the overall plan live in [fs-documentation](https://github.com/FreeSynergy-Net/fs-documentation). Written with the help of Claude (Anthropic).
 
 ## For developers
 
 - Workspace `fs-types`: the library crate `fs-types` (`crates/fs-types`), `fs-conformance` (`crates/fs-conformance`, the conformance frame) and `regenerate` (`crates/regenerate`, not published).
 - Up to fs-interfaces v0.0.26 this code was part of the repository fs-interfaces (crate `fs-types`, schema `types.capnp`, module `values`); the history of those paths is kept. `fs_interfaces::values::X` is now `fs_types::values::X` (also `fs_types::X`), `fs_interfaces::types_capnp` is now `fs_types::types_capnp`. The decision is ADR 0093 (accepted, strategy 2026-11-16).
 - The generated code `src/types_capnp.rs` is committed (ADR 0040); `cargo run -p regenerate` rewrites it with our own compiler (fs-capnpc, tag v0.0.1, pinned). The tests `tests/generated_matches_official.rs` compare it with our compiler and with the official one.
-- Use it by git tag: `fs-types = { git = "https://github.com/FreeSynergy/fs-types", tag = "v0.0.4" }`. Every crate in one build must use the same tag, or the lock holds two copies of the types.
+- Use it from the registry `freesynergy` (from 0.0.7): `fs-types = { version = "~0.0.7", registry = "freesynergy" }`, and in `.cargo/config.toml` of the consuming repo `[registries.freesynergy]` with `index = "https://github.com/FreeSynergy-Net/fs-crates"` (the same string everywhere, see fs-release `docs/crate-index.md`). A version range replaces the git tag, so a new type does not force every consumer to re-tag; one build still holds one copy of the types.
 - Gates: `cargo fmt --check`, `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings -W clippy::pedantic`, `cargo test --workspace --all-features --locked`.
 - Licence: MIT OR Apache-2.0.
 
 ### Using the schema
 
-A crate with its own schemas that need the basic types (for example `fs-interfaces`) must not copy `types.capnp`. It depends on fs-types and reads the schema folder from the checkout that cargo made of the pinned tag:
+A crate with its own schemas that need the basic types (for example `fs-interfaces`) must not copy `types.capnp`. It depends on fs-types and reads the schema folder from the source that cargo unpacked of the pinned version:
 
 1. The schema says `import "/types.capnp";` (a leading slash: found through the import path, not next to the file).
 2. The crate that regenerates its code (a build step or a `regenerate` binary) depends on fs-types, passes `fs_types::SCHEMA_DIR` as import path (`CompileCommand::import_path`), and tells the code generator that the file id `0x916fad50f1c14440` is provided by the crate `fs_types` (`CodeGenerationCommand::crates_provide_map`). The generated code then names `::fs_types::types_capnp::...` and there is no second copy of the types.
-3. `SCHEMA_DIR` is `concat!(env!("CARGO_MANIFEST_DIR"), "/schema")`: the absolute path of the crate source at the time fs-types was compiled, so for a git dependency it points into cargo's checkout of the pinned tag (`$CARGO_HOME/git/checkouts/...`). It is valid as long as that checkout exists, which is the case on the machine that just built it. Use `SCHEMA_DIR` only at build time (a `build.rs` or the `regenerate` binary), never at run time of a shipped program.
+3. `SCHEMA_DIR` is `concat!(env!("CARGO_MANIFEST_DIR"), "/schema")`: the absolute path of the crate source at the time fs-types was compiled, so for a registry dependency it points into cargo's unpacked crate (`$CARGO_HOME/registry/src/...`). It is valid as long as that source exists, which is the case on the machine that just built it. Use `SCHEMA_DIR` only at build time (a `build.rs` or the `regenerate` binary), never at run time of a shipped program.
 
 `tests/generated_matches_official.rs` (`a_dependent_schema_imports_the_types_through_schema_dir`) runs exactly this on a small schema.
 

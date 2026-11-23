@@ -30,7 +30,7 @@ Not published on crates.io; the first tag comes with the next fs-types tag. Prog
 
 ## Part of FreeSynergy
 
-FreeSynergy is a family of programs that are free for everyone, forever, and that keep your data yours: [fs-documentation](https://github.com/FreeSynergy/fs-documentation). Written with the help of Claude (Anthropic). Licence: MIT OR Apache-2.0.
+FreeSynergy is a family of programs that are free for everyone, forever, and that keep your data yours: [fs-documentation](https://github.com/FreeSynergy-Net/fs-documentation). Written with the help of Claude (Anthropic). Licence: MIT OR Apache-2.0.
 
 ## Auf Deutsch
 
