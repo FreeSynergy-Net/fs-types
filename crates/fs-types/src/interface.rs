@@ -17,6 +17,7 @@ use semver::{Comparator, Op, Prerelease, Version, VersionReq};
 
 /// Why a text is not an interface version or need.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum InterfaceProblem {
     /// No `@` between the name and the version.
     MissingAt,

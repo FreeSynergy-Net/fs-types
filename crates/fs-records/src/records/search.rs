@@ -16,6 +16,7 @@ use crate::coded::Coded;
 
 /// One kind of search.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[non_exhaustive]
 pub enum SearchKind {
     /// Every match, or an error: nothing is left out (an invoice, a ledger).
     Complete,

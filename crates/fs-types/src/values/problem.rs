@@ -4,6 +4,7 @@
 
 /// Why typed text is not (yet) a value. The variants are stable codes for the words of a program.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum ValueProblem {
     /// Nothing typed.
     Empty,
@@ -31,4 +32,26 @@ pub enum ValueProblem {
     AddressTooLong,
     /// Fewer than 7 or more than 15 digits.
     PhoneLength,
+}
+
+impl ValueProblem {
+    /// The stable code, as a translation key suffix (`problem.<code>`).
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Empty => "empty",
+            Self::MissingAt => "email.missing-at",
+            Self::ManyAt => "email.many-at",
+            Self::EmptyLocal => "email.empty-local",
+            Self::EmptyDomain => "email.empty-domain",
+            Self::LocalCharacter => "email.local-character",
+            Self::LocalTooLong => "email.local-too-long",
+            Self::BadDomain => "email.bad-domain",
+            Self::DomainWithoutDot => "email.domain-without-dot",
+            Self::AddressTooLong => "email.too-long",
+            Self::NoCountryCode => "phone.no-country-code",
+            Self::PhoneCharacter => "phone.character",
+            Self::PhoneLength => "phone.length",
+        }
+    }
 }

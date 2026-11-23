@@ -8,6 +8,7 @@ use crate::{BasicValue, ObjectId, Reference, TypeProblem};
 /// The kind of what a person reference points at, AS2 names. A cache: when it differs from the target, the target
 /// counts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum PersonArt {
     /// A profile of a person.
     Profile,
@@ -32,6 +33,7 @@ pub struct PersonRef {
 
 /// Who or what takes part in an appointment: a person, or a resource or a place that can be booked.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum Attendee {
     /// A human actor.
     Actor(PersonRef),

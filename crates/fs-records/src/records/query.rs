@@ -15,6 +15,7 @@ use super::search::SearchKind;
 /// person may not read it is FALSE whatever the value (Nachzug: a hidden value never changes a result; under `Not` the
 /// leaf stays false, so the result does not depend on the value either).
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Condition {
     /// The field holds this value (for a `multiple` field: among its values).
     Equals {
@@ -65,6 +66,7 @@ impl Condition {
 
 /// What a sort key sorts by.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SortBy {
     /// A field (empty values last, whatever the direction).
     Field(Vec<String>),

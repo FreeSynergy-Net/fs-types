@@ -5,6 +5,7 @@
 
 /// A defect in a type description.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum DescriptionProblem {
     /// The type, field or command has no name.
     EmptyName,

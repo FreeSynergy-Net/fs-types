@@ -84,7 +84,7 @@ impl TypeProblem {
             Self::Empty => "empty",
             Self::TooLong => "too-long",
             Self::Character => "character",
-            Self::Contact(p) => contact_code(p),
+            Self::Contact(p) => p.code(),
             Self::BadLanguage => "language.bad-tag",
             Self::BadUri => "uri.bad",
             Self::NotAbsolute => "uri.not-absolute",
@@ -110,24 +110,6 @@ impl TypeProblem {
             Self::BadTimeOfDay => "time-of-day.bad",
             Self::BadColor => "color.bad",
         }
-    }
-}
-
-fn contact_code(p: ValueProblem) -> &'static str {
-    match p {
-        ValueProblem::Empty => "empty",
-        ValueProblem::MissingAt => "email.missing-at",
-        ValueProblem::ManyAt => "email.many-at",
-        ValueProblem::EmptyLocal => "email.empty-local",
-        ValueProblem::EmptyDomain => "email.empty-domain",
-        ValueProblem::LocalCharacter => "email.local-character",
-        ValueProblem::LocalTooLong => "email.local-too-long",
-        ValueProblem::BadDomain => "email.bad-domain",
-        ValueProblem::DomainWithoutDot => "email.domain-without-dot",
-        ValueProblem::AddressTooLong => "email.too-long",
-        ValueProblem::NoCountryCode => "phone.no-country-code",
-        ValueProblem::PhoneCharacter => "phone.character",
-        ValueProblem::PhoneLength => "phone.length",
     }
 }
 

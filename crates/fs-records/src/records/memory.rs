@@ -23,6 +23,7 @@ use crate::coded::Coded;
 
 /// One wrong behaviour each (only for proving the suite).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum Flaw {
     /// Every page starts at the beginning.
     CursorIgnored,

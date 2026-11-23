@@ -8,6 +8,7 @@ use crate::records::Records;
 
 /// One situation a rule asks for. The fixture clears what it seeded before and seeds this, as the asking person.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Arrange {
     /// Five readable records in one scope; `probe` is a value of `text` held by exactly `ids[0]`.
     Five,

@@ -15,6 +15,7 @@ use crate::coded::Coded;
 
 /// One node of the tree.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Filter {
     /// All operands hold.
     And(Vec<Filter>),

@@ -21,6 +21,7 @@ pub struct FieldValue {
 
 /// Why the person does not see a field.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum HiddenReason {
     /// She has no right to read it.
     NoRight,
@@ -39,6 +40,7 @@ pub struct Hidden {
 
 /// What kind of lock a record carries. The program decides it; the lock component only shows it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum LockKind {
     /// Someone has taken it over until a time (tasks `claim`).
     Claimed,
@@ -146,6 +148,7 @@ pub struct RecordPage {
 
 /// Nachzug 2: how an estimated total is to be read (named honestly, never shown as exact).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum EstimateKind {
     /// At least this many.
     AtLeast,

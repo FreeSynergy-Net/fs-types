@@ -12,6 +12,7 @@ use super::TypeDescription;
 
 /// What is wrong with one field of a record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum RecordProblem {
     /// The type has no such field.
     UnknownField,
@@ -102,5 +103,22 @@ impl TypeDescription {
             }
         }
         issues
+    }
+}
+
+impl RecordProblem {
+    /// The stable code, as a translation key suffix (`problem.<code>`); a value problem gives its own code.
+    #[must_use]
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::UnknownField => "unknown-field",
+            Self::Missing => "missing",
+            Self::NotMultiple => "not-multiple",
+            Self::Value(p) => p.code(),
+            Self::WrongType => "wrong-type",
+            Self::NestedPath => "nested-path",
+            Self::ReadOnly => "read-only",
+            Self::DuplicatePath => "duplicate-path",
+        }
     }
 }
