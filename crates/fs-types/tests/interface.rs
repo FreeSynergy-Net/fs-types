@@ -97,3 +97,43 @@ fn default_need_from_zero_one_is_caret() {
     assert_eq!(v("x@0.2.1").default_req().to_string(), "x@^0.2.1");
     assert_eq!(v("x@1.2.0").default_req().to_string(), "x@^1.2.0");
 }
+
+#[test]
+fn pre_release_and_build_versions_are_refused() {
+    for t in ["tree@1.0.0-rc.1", "tree@1.0.0+b1", "tree@1.0.0-rc.1+b1"] {
+        assert!(
+            matches!(
+                t.parse::<InterfaceVersion>(),
+                Err(InterfaceProblem::BadVersion(_))
+            ),
+            "{t}"
+        );
+    }
+}
+
+#[test]
+fn pre_release_in_a_need_is_refused() {
+    for t in ["tasks@>=0.2.0-rc.1, <0.3.0", "tree@^1.0.0-rc.1"] {
+        assert!(
+            matches!(t.parse::<InterfaceReq>(), Err(InterfaceProblem::BadReq(_))),
+            "{t}"
+        );
+    }
+}
+
+#[test]
+fn default_req_matches_its_own_version() {
+    for t in ["x@0.0.3", "x@0.2.1", "x@1.2.0"] {
+        let ver = v(t);
+        assert!(ver.default_req().matches(&ver), "{t}");
+    }
+}
+
+#[test]
+fn is_full_needs_all_three_parts_and_no_wildcard() {
+    assert!(r("x@>=0.2.0, <0.3.0").is_full());
+    assert!(r("x@^1.2.3").is_full());
+    assert!(!r("x@0.2").is_full());
+    assert!(!r("x@*").is_full());
+    assert!(!r("x@<=0.2").is_full());
+}

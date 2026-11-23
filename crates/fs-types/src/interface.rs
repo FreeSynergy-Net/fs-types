@@ -2,7 +2,11 @@
 //!
 //! `semver` reads the numbers; this module adds only the name and the way it is written. A version is always three parts
 //! (`tree@1.0.0`); a need is a `semver::VersionReq` in Cargo grammar with a comma between comparisons
-//! (`tasks@>=0.2.0, <0.3.0`, `tree@^1.0.0`). There is no second text form.
+//! (`tasks@>=0.2.0, <0.3.0`, `tree@^1.0.0`). There is no second text form. Pre-release and build parts are refused
+//! (ADR 0064 no. 4).
+//!
+//! The need reader takes the whole Cargo grammar (`tasks@0.2`, `*`, `~`, spaces). Consumers therefore read only the
+//! parsed `req().comparators`, never the text; whoever needs a strict need asks `InterfaceReq::is_full`.
 //!
 //! Pattern: Value object (compared by value, valid on construction).
 
@@ -85,10 +89,7 @@ impl InterfaceVersion {
         let comparators = if v.major == 0 && v.minor == 0 {
             vec![cmp(Op::GreaterEq, 0, 0, v.patch), cmp(Op::Less, 0, 1, 0)]
         } else {
-            vec![Comparator {
-                pre: v.pre.clone(),
-                ..cmp(Op::Caret, v.major, v.minor, v.patch)
-            }]
+            vec![cmp(Op::Caret, v.major, v.minor, v.patch)]
         };
         InterfaceReq {
             name: self.name.clone(),
@@ -104,6 +105,12 @@ impl FromStr for InterfaceVersion {
         let (name, version) = split(text)?;
         let version =
             Version::parse(version).map_err(|e| InterfaceProblem::BadVersion(e.to_string()))?;
+        // ADR 0064 no. 4: only `x.y.z`; no pre-release, no build metadata (same rule as `parse_version` in fs-interfaces).
+        if !version.pre.is_empty() || !version.build.is_empty() {
+            return Err(InterfaceProblem::BadVersion(
+                "pre-release and build parts are not allowed".to_owned(),
+            ));
+        }
         Ok(Self {
             name: name.to_owned(),
             version,
@@ -137,6 +144,17 @@ impl InterfaceReq {
         &self.req
     }
 
+    /// True when every comparator names minor and patch (`>=0.2.0`, `^1.2.3`): no partial versions, no `*`.
+    #[must_use]
+    pub fn is_full(&self) -> bool {
+        !self.req.comparators.is_empty()
+            && self
+                .req
+                .comparators
+                .iter()
+                .all(|c| c.op != Op::Wildcard && c.minor.is_some() && c.patch.is_some())
+    }
+
     /// Same name and the version meets the need.
     #[must_use]
     pub fn matches(&self, offered: &InterfaceVersion) -> bool {
@@ -150,6 +168,11 @@ impl FromStr for InterfaceReq {
     fn from_str(text: &str) -> Result<Self, Self::Err> {
         let (name, req) = split(text)?;
         let req = VersionReq::parse(req).map_err(|e| InterfaceProblem::BadReq(e.to_string()))?;
+        if req.comparators.iter().any(|c| !c.pre.is_empty()) {
+            return Err(InterfaceProblem::BadReq(
+                "pre-release parts are not allowed".to_owned(),
+            ));
+        }
         Ok(Self {
             name: name.to_owned(),
             req,
