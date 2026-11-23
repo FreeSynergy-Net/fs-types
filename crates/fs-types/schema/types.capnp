@@ -18,7 +18,9 @@
 # a Rust enum with `Other(String)` in `fs-types` (`NameKind`, `AddressKind`, `RelativeTo`: read everything, keep it,
 # write it back unchanged). A Cap'n Proto enum is only for lists of our own. 0.0.7 changed the type of
 # `NameComponent.kind` and `AddressComponent.kind` (@0) from enum to Text on purpose: the one break of the baseline
-# (ENTSCHEID-vendor-werte.md); nothing outside this repository used them on the wire.
+# (ENTSCHEID-vendor-werte.md, decision of the strategy 23.11.): a one-time exception in the 0.0.7 window, the enums
+# `NameKind` and `AddressKind` are gone from the schema. After 0.0.7 the rule "never renumber or remove" holds again
+# without exception. Nothing outside this repository used them on the wire.
 @0x916fad50f1c14440;
 
 # ---------------------------------------------------------------- 1. basic types
