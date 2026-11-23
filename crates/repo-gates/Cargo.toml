@@ -6,3 +6,11 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 publish = false
+
+[dev-dependencies]
+fs-types = { path = "../fs-types", version = "0.0.7" }
+# Our own pure-Rust schema compiler (ADR 0040) regenerates the committed code ...
+capnp-compiler = { git = "https://github.com/FreeSynergy/fs-capnpc", tag = "v0.0.1" }
+capnpc = "0.27"
+# ... and the official compiler (as WASM) is the oracle in tests/generated_matches_official.rs.
+capnpc-embedded = "0.2"

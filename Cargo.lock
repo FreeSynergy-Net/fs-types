@@ -286,9 +286,6 @@ name = "fs-types"
 version = "0.0.7"
 dependencies = [
  "capnp",
- "capnp-compiler",
- "capnpc",
- "capnpc-embedded",
  "chrono",
  "geo-uri",
  "idna",
@@ -738,6 +735,12 @@ dependencies = [
 [[package]]
 name = "repo-gates"
 version = "0.0.7"
+dependencies = [
+ "capnp-compiler",
+ "capnpc",
+ "capnpc-embedded",
+ "fs-types",
+]
 
 [[package]]
 name = "rustix"

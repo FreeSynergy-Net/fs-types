@@ -20,9 +20,10 @@ fn generate(request: &[u8], tag: &str) -> PathBuf {
 }
 
 fn assert_same(dir: &Path, who: &str) {
-    let committed =
-        std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/types_capnp.rs"))
-            .unwrap();
+    let committed = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../fs-types/src/types_capnp.rs"),
+    )
+    .unwrap();
     let fresh = std::fs::read_to_string(dir.join("types_capnp.rs")).unwrap();
     let same = committed == fresh;
     let _ = std::fs::remove_dir_all(dir);
