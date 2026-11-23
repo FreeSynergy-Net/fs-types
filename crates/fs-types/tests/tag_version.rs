@@ -142,7 +142,10 @@ fn member_licence_copies_equal_the_root_files() {
         for member in ["fs-types", "fs-conformance", "fs-records"] {
             let got = std::fs::read(format!("{root}/crates/{member}/{name}"))
                 .unwrap_or_else(|e| panic!("crates/{member}/{name}: {e}"));
-            assert!(got == want, "crates/{member}/{name} differs from the root {name}");
+            assert!(
+                got == want,
+                "crates/{member}/{name} differs from the root {name}"
+            );
         }
     }
 }
