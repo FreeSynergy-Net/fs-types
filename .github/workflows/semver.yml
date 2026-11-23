@@ -1,10 +1,15 @@
 # Gate before an entry in the registry index (ENTSCHEID-Kaskade K-4): while the versions are 0.0.x, only additive changes
-# are allowed, and every public enum is #[non_exhaustive]. cargo-semver-checks (crates.io, pinned) compares the tag with the
-# tag before it. `--release-type minor` is on purpose: by default 0.0.x -> 0.0.y would allow any break.
+# are allowed, and every public enum is #[non_exhaustive]. cargo-semver-checks (pinned, prebuilt binary with checked sha256)
+# compares the checked-out state with the tag before it. `--release-type minor` is on purpose: by default 0.0.x -> 0.0.y
+# would allow any break.
+# Two jobs: `semver` is the real check; `selftest` is the permanent counter-proof: it applies a small mutant (a public
+# method made private) to the working tree and FAILS when cargo-semver-checks stays green on it (a tool that cannot go red
+# is no gate). Both run on every tag, on every unreviewed/* push and by hand.
 name: semver
 on:
   push:
     tags: ["v*"]
+    branches: ["unreviewed/**"]
   workflow_dispatch:
     inputs:
       baseline:
@@ -15,7 +20,9 @@ permissions:
   contents: read
 
 env:
+  # cargo-semver-checks release v0.51.0, x86_64-unknown-linux-musl; sha256 as published by the GitHub release (asset digest)
   SEMVER_CHECKS_VERSION: "0.51.0"
+  SEMVER_CHECKS_SHA256: "396c8508d973c83de52660943a057e971b586f7511c3ba695762373452b43d5b"
 
 jobs:
   semver:
@@ -29,13 +36,56 @@ jobs:
       - uses: FreeSynergy-Net/fs-release/actions/setup-rust@485f74732ddb90965fafcfa37b6a4f6b473dcc6b
         with:
           cache-key: semver
-      - run: cargo install cargo-semver-checks --locked --version "$SEMVER_CHECKS_VERSION"
+      - name: install cargo-semver-checks (pinned, sha256 checked)
+        run: |
+          set -euo pipefail
+          f=cargo-semver-checks-x86_64-unknown-linux-musl.tar.gz
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$f" "https://github.com/obi1kenobi/cargo-semver-checks/releases/download/v${SEMVER_CHECKS_VERSION}/$f"
+          echo "$SEMVER_CHECKS_SHA256  $RUNNER_TEMP/$f" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin" && tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: compare with the tag before
         env:
           BASELINE_INPUT: ${{ inputs.baseline }}
         run: |
           set -euo pipefail
-          base="${BASELINE_INPUT:-$(git describe --tags --abbrev=0 --match 'v*' HEAD^)}"
+          cargo semver-checks --version
+          if [ -n "$BASELINE_INPUT" ]; then base="$BASELINE_INPUT"
+          elif [ "$GITHUB_REF_TYPE" = tag ]; then base="$(git describe --tags --abbrev=0 --match 'v*' HEAD^)"
+          else base="$(git describe --tags --abbrev=0 --match 'v*' HEAD)"; fi
           echo "baseline: $base"
           cargo semver-checks check-release --release-type minor --baseline-rev "$base" \
             -p fs-types -p fs-conformance -p fs-records
+
+  selftest:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@485f74732ddb90965fafcfa37b6a4f6b473dcc6b
+        with:
+          cache-key: semver
+      - name: install cargo-semver-checks (pinned, sha256 checked)
+        run: |
+          set -euo pipefail
+          f=cargo-semver-checks-x86_64-unknown-linux-musl.tar.gz
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$f" "https://github.com/obi1kenobi/cargo-semver-checks/releases/download/v${SEMVER_CHECKS_VERSION}/$f"
+          echo "$SEMVER_CHECKS_SHA256  $RUNNER_TEMP/$f" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin" && tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: control (unchanged tree against HEAD must be green)
+        run: cargo semver-checks check-release --release-type minor --baseline-rev HEAD -p fs-types
+      - name: mutant (a public method made private must be red)
+        run: |
+          set -uo pipefail
+          sed -i 's/^    pub fn red(&self) -> u8 {/    fn red(\&self) -> u8 {/' crates/fs-types/src/color.rs
+          git diff --quiet && { echo "selftest broken: the mutant did not apply"; exit 2; }
+          cargo semver-checks check-release --release-type minor --baseline-rev HEAD -p fs-types 2>&1 | tee "$RUNNER_TEMP/mutant.log"
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ] && grep -q 'inherent_method_missing' "$RUNNER_TEMP/mutant.log"; then
+            echo "selftest ok: the mutant was detected (rc=$rc, lint inherent_method_missing)"
+          else
+            echo "selftest FAILED: the mutant was NOT detected as a break (rc=$rc)"; exit 1
+          fi
