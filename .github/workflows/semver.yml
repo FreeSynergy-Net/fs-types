@@ -79,7 +79,7 @@ jobs:
         run: cargo semver-checks check-release --release-type minor --baseline-rev HEAD -p fs-types
       - name: mutant (a public method made private must be red)
         run: |
-          set -uo pipefail
+          set +e -u
           sed -i 's/^    pub fn red(&self) -> u8 {/    fn red(\&self) -> u8 {/' crates/fs-types/src/color.rs
           git diff --quiet && { echo "selftest broken: the mutant did not apply"; exit 2; }
           cargo semver-checks check-release --release-type minor --baseline-rev HEAD -p fs-types 2>&1 | tee "$RUNNER_TEMP/mutant.log"
