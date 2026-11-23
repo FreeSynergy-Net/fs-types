@@ -6,6 +6,7 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
+publish = ["freesynergy"]
 readme = "README.md"
 
 [features]
@@ -13,8 +14,8 @@ readme = "README.md"
 conformance = ["dep:fs-conformance", "dep:async-trait"]
 
 [dependencies]
-fs-types = { path = "../fs-types" }
-fs-conformance = { path = "../fs-conformance", optional = true }
+fs-types = { path = "../fs-types", version = "0.0.7" }
+fs-conformance = { path = "../fs-conformance", version = "0.0.7", optional = true }
 async-trait = { version = "0.1", optional = true }
 
 [dev-dependencies]

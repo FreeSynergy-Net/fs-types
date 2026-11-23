@@ -2,9 +2,24 @@
 
 Version = tag.
 
+## 0.0.7
+
+Prepared (K-4), not tagged yet. First version for the registry `freesynergy` (ENTSCHEID-Kaskade B2).
+
+- Crate version = tag is now checked: `crates/fs-types/tests/tag_version.rs` fails a tag run when `Cargo.toml` differs from the tag or `CHANGELOG.md` has no non-empty section of that version. Reason: tag v0.0.6 was cut while `Cargo.toml` said 0.0.5.
+- Workflow `semver.yml` (cargo-semver-checks 0.51.0, `--release-type minor`) compares each tag with the tag before it: in 0.0.x only additive changes. Rule: public enums are `#[non_exhaustive]`.
+- The path dependencies of `fs-conformance` and `fs-records` carry `version`; the three library crates have `publish = ["freesynergy"]`. No change of the public interface.
+- Auf Deutsch: Crate-Version = Tag wird geprueft (Test `tag_version`), Semver-Pruefung gegen den vorigen Tag (nur Hinzufuegen in 0.0.x), Vorbereitung fuer das Registry `freesynergy`.
+
+## 0.0.6
+
+Released 2026-11-23 (tag v0.0.6; its `Cargo.toml` said 0.0.5 by mistake, fixed in 0.0.7).
+
+- New `fs_types::interface`: `InterfaceVersion` and `InterfaceReq` (`name@x.y.z`, `name@<req>`, on `semver`); pre-release and build parts are refused (ADR 0064 no. 4); `InterfaceReq::is_full`.
+
 ## 0.0.5
 
-Unreleased.
+Released 2026-11-23 (tag v0.0.5).
 
 - New basic types: `Time` / `BasicType::Time` (`@21`; RFC 3339 `partial-time`: `HH:MM:SS` with an optional fraction of 1-9 digits, no zone, no `T`, leap second refused; canonical text without trailing zeros of the fraction), `Color` / `BasicType::Color` (`@22`; CSS Color Level 4 hex `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, sRGB with alpha; canonical lower case, long form, alpha only when not opaque; named colours and functions are refused). New codes `TypeProblem::BadTimeOfDay` (`time-of-day.bad`) and `BadColor` (`color.bad`); `BasicRules::standard()` knows both. `types_capnp.rs` regenerated (append only). No new dependency. `money`, `quantity`, `recurrence` are NOT in this version (request: ISO 4217, UCUM, RFC 5545 / RFC 8984).
 - Auf Deutsch: Neue Grundtypen `Time` (Uhrzeit nach RFC 3339 `partial-time`, streng, ohne Zone, ohne Schaltsekunde, `BasicType::Time` = `@21`) und `Color` (Farbe, CSS-Color-Level-4-Hex mit Alpha, kanonisch klein in Langform, `BasicType::Color` = `@22`); neue Codes `BadTimeOfDay` und `BadColor`; die Wire-Datei wurde nur angehängt. Geld, Menge und Wiederholung kommen nicht in dieser Version.

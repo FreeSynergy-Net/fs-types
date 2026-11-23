@@ -6,11 +6,12 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
+publish = ["freesynergy"]
 readme = "README.md"
 
 [dependencies]
 async-trait = "0.1"
-fs-types = { path = "../fs-types" }
+fs-types = { path = "../fs-types", version = "0.0.7" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }

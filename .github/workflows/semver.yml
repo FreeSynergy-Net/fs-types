@@ -1,0 +1,41 @@
+# Gate before an entry in the registry index (ENTSCHEID-Kaskade K-4): while the versions are 0.0.x, only additive changes
+# are allowed, and every public enum is #[non_exhaustive]. cargo-semver-checks (crates.io, pinned) compares the tag with the
+# tag before it. `--release-type minor` is on purpose: by default 0.0.x -> 0.0.y would allow any break.
+name: semver
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: "Baseline tag (default: the tag before the checked-out one)"
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  SEMVER_CHECKS_VERSION: "0.51.0"
+
+jobs:
+  semver:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@485f74732ddb90965fafcfa37b6a4f6b473dcc6b
+        with:
+          cache-key: semver
+      - run: cargo install cargo-semver-checks --locked --version "$SEMVER_CHECKS_VERSION"
+      - name: compare with the tag before
+        env:
+          BASELINE_INPUT: ${{ inputs.baseline }}
+        run: |
+          set -euo pipefail
+          base="${BASELINE_INPUT:-$(git describe --tags --abbrev=0 --match 'v*' HEAD^)}"
+          echo "baseline: $base"
+          cargo semver-checks check-release --release-type minor --baseline-rev "$base" \
+            -p fs-types -p fs-conformance -p fs-records
