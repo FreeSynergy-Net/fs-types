@@ -11,7 +11,7 @@ readme = "README.md"
 
 [dependencies]
 async-trait = "0.1"
-fs-types = { path = "../fs-types", version = "0.0.7" }
+fs-types = { path = "../fs-types", version = "0.0.7", registry = "freesynergy" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }

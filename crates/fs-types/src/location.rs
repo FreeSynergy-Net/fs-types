@@ -9,7 +9,7 @@
 
 use std::collections::BTreeSet;
 
-use strum::{EnumString, IntoStaticStr};
+use strum::{AsRefStr, EnumString};
 
 use crate::kind::registry_word;
 use crate::value::{bad_char, one_line};
@@ -40,7 +40,7 @@ pub struct Location {
 /// understand counts as if the property were omitted, so `Other` means "not said" for a calendar; it is kept and written
 /// back unchanged (read everything). The alert trigger of `fs-jscalendar` is a different, closed set (section 4.5.2) and
 /// is not this type. The pattern is the one of [`crate::NameKind`].
-#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, IntoStaticStr)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, AsRefStr)]
 #[strum(serialize_all = "lowercase")]
 #[non_exhaustive]
 pub enum RelativeTo {
@@ -49,7 +49,7 @@ pub enum RelativeTo {
     /// `end`.
     End,
     /// A word that is not in the list, kept as read.
-    #[strum(default)]
+    #[strum(default, transparent)]
     Other(String),
 }
 registry_word!(RelativeTo);
@@ -240,9 +240,9 @@ impl Location {
     /// Read the JSCalendar form: every part is checked again, so a `Location` is valid whatever the JSON said.
     ///
     /// # Errors
-    /// The first part that breaks its rule: `Character`, `TooLong` (name, description, types),
-    /// (an empty `relativeTo`), `BadZone`, a `geo:` problem (`BadPlace`, `PlaceRange`, `OutOfRange`), a link problem
-    /// (`BadUri`, `NotAbsolute`, `UnsafeScheme`).
+    /// The first part that breaks its rule: `Character`, `TooLong` (name, description, types, and the word of a
+    /// `relativeTo`; an empty `relativeTo` counts as not set), `BadZone`, a `geo:` problem (`BadPlace`, `PlaceRange`,
+    /// `OutOfRange`), a link problem (`BadUri`, `NotAbsolute`, `UnsafeScheme`).
     pub fn from_parts(parts: &LocationParts) -> Result<Self, TypeProblem> {
         parts.to_location()
     }
