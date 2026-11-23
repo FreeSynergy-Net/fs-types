@@ -28,7 +28,11 @@ fn value_problem_codes_are_stable() {
 
 #[test]
 fn type_problem_contact_uses_the_value_code() {
-    for p in [ValueProblem::Empty, ValueProblem::PhoneLength, ValueProblem::ManyAt] {
+    for p in [
+        ValueProblem::Empty,
+        ValueProblem::PhoneLength,
+        ValueProblem::ManyAt,
+    ] {
         assert_eq!(TypeProblem::Contact(p).code(), p.code());
     }
 }
