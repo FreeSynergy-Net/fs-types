@@ -54,8 +54,14 @@ pub(crate) fn normalized(iri: &IriStr) -> String {
 }
 
 /// The schemes a link may not have: a frontend may make a link clickable, and these run code or embed a document
-/// (provisional rule, DESIGN.md).
-const UNSAFE_FOR_LINK: [&str; 3] = ["javascript", "vbscript", "data"];
+/// (provisional rule, DESIGN.md). The one list for [`Link`] and [`crate::ContactAddress`]: both go through
+/// `checked_for_link`, there is no second copy.
+pub(crate) const UNSAFE_FOR_LINK: [&str; 3] = ["javascript", "vbscript", "data"];
+
+/// Check `typed` as an absolute IRI whose scheme is not in the list of unsafe link schemes (`UnsafeScheme` otherwise).
+pub(crate) fn checked_for_link(typed: &str) -> Result<&IriStr, TypeProblem> {
+    checked(typed, &UNSAFE_FOR_LINK)
+}
 /// The same for a picture: a small `data:` image is legitimate.
 pub(crate) const UNSAFE_FOR_IMAGE: [&str; 2] = ["javascript", "vbscript"];
 
@@ -69,7 +75,7 @@ impl BasicValue for Link {
     const KIND: BasicType = BasicType::Link;
 
     fn parse(typed: &str) -> Result<Self, TypeProblem> {
-        checked(typed, &UNSAFE_FOR_LINK).map(|iri| Self(normalized(iri)))
+        checked_for_link(typed).map(|iri| Self(normalized(iri)))
     }
 
     fn canonical(&self) -> String {

@@ -21,6 +21,8 @@ zeroize = { version = "1.9", default-features = false, features = ["alloc"] }
 # SemVer 2.0.0: the one reader of versions and needs (`fs_types::interface` adds the name; no own parser).
 semver = "1.0.28"
 unicode-normalization = "0.1"
+# The one reader and writer of the registry words (`NameKind`, `AddressKind`, `RelativeTo`): `EnumString` with a default variant keeps an unknown word as `Other`.
+strum = { version = "0.28", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 # The doctests of `Secret` prove with a bound on `serde::Serialize` that it cannot be serialised (and, with a String, that the bound itself compiles).

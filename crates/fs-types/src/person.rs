@@ -43,8 +43,10 @@ pub enum Attendee {
     Location(Reference),
 }
 
-/// How to reach a human: an absolute IRI with the scheme `mailto`, `tel`, `xmpp`, `sip`, `matrix` or `https`
-/// (RFC 6068, 3966, 5122, 3261, Matrix URI, RFC 9110), kept as written. Not a person id (ADR 0085 section 3).
+/// How to reach a human: any absolute URI (RFC 9553 section 1.4.4: a phone `number`, an online service `uri`, a resource
+/// `uri` take "a URI", any scheme: `mailto:`, `tel:`, `xmpp:`, `sip:`, `matrix:`, `https:`, `webcal:`, `ldap:`, `irc:` ...),
+/// kept as written, except the schemes a link may not have (`javascript:`, `vbscript:`, `data:`: `UnsafeScheme`; the
+/// one list of [`crate::Link`], see `iri.rs`). Not a person id (ADR 0085 section 3).
 /// Search compares scheme and domain without case (the provider's rule), the value is never rewritten. Called
 /// `Address` by the first topic crates; here that name is the postal address of `address.rs`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -63,18 +65,11 @@ impl ContactAddress {
     /// Read an address.
     ///
     /// # Errors
-    /// The problem of [`Reference`] for a text that is no absolute IRI; `NotInList` for a scheme not named above.
+    /// The problem of [`Reference`] for a text that is no absolute IRI; `UnsafeScheme` for a scheme a link may not have.
     pub fn parse(typed: &str) -> Result<Self, TypeProblem> {
         let text = Reference::parse(typed)?.canonical();
-        let scheme = text
-            .split_once(':')
-            .map(|(s, _)| s.to_ascii_lowercase())
-            .unwrap_or_default();
-        if ["mailto", "tel", "xmpp", "sip", "matrix", "https"].contains(&scheme.as_str()) {
-            Ok(Self(text))
-        } else {
-            Err(TypeProblem::NotInList)
-        }
+        crate::iri::checked_for_link(&text)?;
+        Ok(Self(text))
     }
 
     /// The address as written.

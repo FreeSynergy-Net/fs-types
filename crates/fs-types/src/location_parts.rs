@@ -3,7 +3,7 @@
 //! Pattern: Adapter data with a builder. The fields are private on purpose: a new JSCalendar field later is a new
 //! `with_*`/getter pair and breaks no consumer (the project puts `non_exhaustive` on enums only, not on structs).
 //! Mapping to RFC 8984 section 4.2.5: `name` (optional), `description`, `locationTypes`, `coordinates` (`geo:` URI),
-//! `relativeTo` (`start`/`end`), `timeZone` (IANA name or custom `/id`), `links` (`href` only), plus our `address`.
+//! `relativeTo` (`start`, `end` or any other registry word, kept), `timeZone` (IANA name or custom `/id`), `links` (`href` only), plus our `address`.
 
 use crate::{Address, BasicValue, Link, Location, RelativeTo, TypeProblem, Zone};
 
@@ -63,7 +63,7 @@ impl LocationParts {
         }
     }
 
-    /// With `relativeTo` (`start` or `end`).
+    /// With `relativeTo` (`start`, `end` or any other word of the registry: it is kept as it is).
     #[must_use]
     pub fn with_relative_to(self, word: &str) -> Self {
         Self {
@@ -172,11 +172,7 @@ impl LocationParts {
             .as_deref()
             .map(crate::GeoPoint::from_geo_uri)
             .transpose()?;
-        let relative_to = self
-            .relative_to
-            .as_deref()
-            .map(RelativeTo::parse)
-            .transpose()?;
+        let relative_to = self.relative_to.as_deref().map(RelativeTo::from_text);
         let time_zone = self
             .time_zone
             .as_deref()
@@ -193,7 +189,7 @@ impl LocationParts {
             .with_description(self.description.as_deref().unwrap_or(""))?
             .with_location_types(&types)?
             .with_coordinates(coordinates)
-            .with_relative_to(relative_to)
+            .with_relative_to(relative_to)?
             .with_time_zone(time_zone)
             .with_address(self.address.clone())
             .with_links(&links))

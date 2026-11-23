@@ -2,9 +2,10 @@
 //!
 //! Pattern: Value object, built by `Name::new` (the check) or parsed from one line (the full name only: splitting
 //! "Ada Lovelace" into given and surname is a guess that is wrong for many names, so it is not done). The
-//! component kinds are the wire enum [`NameKind`].
+//! component kinds are [`NameKind`] (an enum that keeps a registry word it does not know).
 
-use crate::types_capnp::{BasicType, NameKind};
+use crate::NameKind;
+use crate::types_capnp::BasicType;
 use unicode_normalization::UnicodeNormalization;
 
 use crate::value::bad_char;
@@ -30,10 +31,10 @@ impl Name {
     ///
     /// # Errors
     /// [`TypeProblem::NoParts`] with neither full text nor component; [`TypeProblem::Character`] for control characters (a line end at the edges is no problem, white space is collapsed);
-    /// [`TypeProblem::TooLong`] above 1024 characters in a part.
+    /// [`TypeProblem::TooLong`] above 1024 characters in a part; `Empty`, `Character`, `TooLong` for the word of an `Other` kind.
     pub fn new(full: &str, components: &[(NameKind, &str)]) -> Result<Self, TypeProblem> {
         // A separator is literal (RFC 9553 section 2.2.1.2): neither trimmed nor collapsed, only dropped when empty.
-        let components: Vec<(NameKind, String)> = components
+        let components = components
             .iter()
             .map(|(k, v)| {
                 let text = if *k == NameKind::Separator {
@@ -41,10 +42,12 @@ impl Name {
                 } else {
                     tidy(v)
                 };
-                (*k, text)
+                Ok((k.clone().checked()?, text))
             })
+            .collect::<Result<Vec<(NameKind, String)>, TypeProblem>>()?
+            .into_iter()
             .filter(|(_, v)| !v.is_empty())
-            .collect();
+            .collect::<Vec<_>>();
         let full = tidy(full);
         if full.is_empty() && components.is_empty() {
             return Err(TypeProblem::NoParts);

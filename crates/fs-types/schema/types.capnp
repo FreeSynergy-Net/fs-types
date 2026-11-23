@@ -13,6 +13,12 @@
 #
 # Evolution rules (Cap'n Proto): never renumber or remove; only append. Ordinal 0 of an enum is `unknown`: a reader that
 # meets a newer value reads `unknown` and treats the field as plain text.
+#
+# Registry values (0.0.7): a value from an open registry (JSContact enum values, AS2 types) travels as `Text` and is
+# a Rust enum with `Other(String)` in `fs-types` (`NameKind`, `AddressKind`, `RelativeTo`: read everything, keep it,
+# write it back unchanged). A Cap'n Proto enum is only for lists of our own. 0.0.7 changed the type of
+# `NameComponent.kind` and `AddressComponent.kind` (@0) from enum to Text on purpose: the one break of the baseline
+# (ENTSCHEID-vendor-werte.md); nothing outside this repository used them on the wire.
 @0x916fad50f1c14440;
 
 # ---------------------------------------------------------------- 1. basic types
@@ -50,11 +56,9 @@ enum BasicType {
 # in canonical form, as the checking function returns it.
 
 struct NameComponent {
-  kind  @0 :NameKind;
+  kind  @0 :Text;                        # RFC 9553 kind word (case-sensitive) or a vendor word `domain:name`; Rust: `NameKind`
   value @1 :Text;
 }
-# JSContact NameComponent kinds (RFC 9553 section 2.2.1.2).
-enum NameKind { unknown @0; title @1; given @2; given2 @3; surname @4; surname2 @5; credential @6; generation @7; separator @8; }
 
 struct Name {
   full       @0 :Text;                  # may be empty when components are given
@@ -62,11 +66,9 @@ struct Name {
 }
 
 struct AddressComponent {
-  kind  @0 :AddressKind;
+  kind  @0 :Text;                        # RFC 9553 kind word (case-sensitive) or a vendor word `domain:name`; Rust: `AddressKind`
   value @1 :Text;
 }
-# JSContact AddressComponent kinds (RFC 9553 section 2.5.1.2), the ones common to all countries.
-enum AddressKind { unknown @0; room @1; apartment @2; floor @3; building @4; number @5; name @6; block @7; subdistrict @8; district @9; locality @10; region @11; postcode @12; country @13; direction @14; landmark @15; postOfficeBox @16; separator @17; }
 
 struct Address {
   components  @0 :List(AddressComponent);

@@ -135,8 +135,8 @@ fn from_parts_checks_every_part() {
         Some(TypeProblem::Character)
     );
     assert_eq!(
-        with(LocationParts::new().with_relative_to("middle")),
-        Some(TypeProblem::NotInList)
+        with(LocationParts::new().with_relative_to("")),
+        Some(TypeProblem::Empty)
     );
     assert_eq!(
         with(LocationParts::new().with_time_zone("Europe/ Vienna")),
@@ -162,6 +162,7 @@ fn relative_to_and_time_zone_round_trip() {
         .with_name("Gate")
         .unwrap()
         .with_relative_to(Some(RelativeTo::End))
+        .unwrap()
         .with_time_zone(Some(Zone::iana("Europe/Vienna").unwrap()));
     let parts = l.to_parts();
     assert_eq!(parts.relative_to(), Some("end"));
@@ -169,11 +170,8 @@ fn relative_to_and_time_zone_round_trip() {
     assert_eq!(Location::from_parts(&parts).unwrap(), l);
     let custom = Location::new().with_time_zone(Some(Zone::custom("/mine").unwrap()));
     assert_eq!(Location::from_parts(&custom.to_parts()).unwrap(), custom);
-    assert_eq!(RelativeTo::parse("start").unwrap().as_str(), "start");
-    assert_eq!(
-        RelativeTo::parse("Start").err(),
-        Some(TypeProblem::NotInList)
-    );
+    assert_eq!(RelativeTo::from_text("start"), RelativeTo::Start);
+    assert_eq!(RelativeTo::End.as_str(), "end");
 }
 
 #[test]

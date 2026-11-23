@@ -4,7 +4,8 @@
 //! from components is only a list of the values (`, ` between them) and `full` stays what the person wrote. The country
 //! code is checked for shape (two letters); whether it is an assigned ISO 3166-1 code is `Unsupported` (DESIGN.md).
 
-use crate::types_capnp::{AddressKind, BasicType};
+use crate::AddressKind;
+use crate::types_capnp::BasicType;
 use unicode_normalization::UnicodeNormalization;
 
 use crate::value::bad_char;
@@ -31,7 +32,7 @@ impl Address {
     ///
     /// # Errors
     /// [`TypeProblem::NoParts`] with no full text and no component; [`TypeProblem::BadCountryCode`] unless empty or two
-    /// letters; [`TypeProblem::Character`], [`TypeProblem::TooLong`] as for a name.
+    /// letters; [`TypeProblem::Character`], [`TypeProblem::TooLong`] as for a name (also for the word of an `Other` kind).
     pub fn new(
         components: &[(AddressKind, &str)],
         country_code: &str,
@@ -43,11 +44,13 @@ impl Address {
         {
             return Err(TypeProblem::BadCountryCode);
         }
-        let components: Vec<(AddressKind, String)> = components
+        let components = components
             .iter()
-            .map(|(k, v)| (*k, tidy(v)))
+            .map(|(k, v)| Ok((k.clone().checked()?, tidy(v))))
+            .collect::<Result<Vec<(AddressKind, String)>, TypeProblem>>()?
+            .into_iter()
             .filter(|(_, v)| !v.is_empty())
-            .collect();
+            .collect::<Vec<_>>();
         // `full` is the address as people write it on an envelope: its line ends stay.
         let full = full
             .lines()

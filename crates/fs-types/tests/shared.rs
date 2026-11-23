@@ -113,7 +113,7 @@ fn zone_is_iana_or_custom() {
 }
 
 #[test]
-fn contact_address_takes_six_schemes_and_is_no_identity() {
+fn contact_address_takes_any_absolute_uri_and_is_no_identity() {
     let a = ContactAddress::parse("MAILTO:ada@example.org").unwrap();
     assert_eq!(a.scheme(), "mailto");
     assert_eq!(a.canonical(), "MAILTO:ada@example.org");
@@ -126,10 +126,7 @@ fn contact_address_takes_six_schemes_and_is_no_identity() {
     ] {
         assert!(ContactAddress::parse(ok).is_ok(), "{ok}");
     }
-    assert_eq!(
-        ContactAddress::parse("urn:uuid:0192f5a0-7b1c-7cde-8f00-123456789abc").err(),
-        Some(TypeProblem::NotInList)
-    );
+    assert!(ContactAddress::parse("urn:uuid:0192f5a0-7b1c-7cde-8f00-123456789abc").is_ok());
     assert_eq!(
         ContactAddress::parse("ada@example.org").err(),
         Some(TypeProblem::NotAbsolute)

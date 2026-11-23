@@ -9,6 +9,9 @@
 
 use std::collections::BTreeSet;
 
+use strum::{EnumString, IntoStaticStr};
+
+use crate::kind::registry_word;
 use crate::value::{bad_char, one_line};
 use crate::{Address, GeoPoint, Link, LocationParts, Place, TypeProblem, Zone};
 
@@ -32,37 +35,24 @@ pub struct Location {
     links: Vec<Link>,
 }
 
-/// Where a location is relative to its event (RFC 8984 `relativeTo`): its `start` or its `end`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+/// Where a location is relative to its event (RFC 8984 section 4.2.5 `relativeTo`): its `start` or its `end`, or a word of
+/// the registry we do not know (a newer IANA value or a vendor value). RFC 8984 says a value the reader does not
+/// understand counts as if the property were omitted, so `Other` means "not said" for a calendar; it is kept and written
+/// back unchanged (read everything). The alert trigger of `fs-jscalendar` is a different, closed set (section 4.5.2) and
+/// is not this type. The pattern is the one of [`crate::NameKind`].
+#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, IntoStaticStr)]
+#[strum(serialize_all = "lowercase")]
+#[non_exhaustive]
 pub enum RelativeTo {
     /// `start`.
     Start,
     /// `end`.
     End,
+    /// A word that is not in the list, kept as read.
+    #[strum(default)]
+    Other(String),
 }
-
-impl RelativeTo {
-    /// The JSCalendar word.
-    #[must_use]
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Start => "start",
-            Self::End => "end",
-        }
-    }
-
-    /// Read the JSCalendar word.
-    ///
-    /// # Errors
-    /// `NotInList` for anything but `start` and `end`.
-    pub fn parse(word: &str) -> Result<Self, TypeProblem> {
-        match word {
-            "start" => Ok(Self::Start),
-            "end" => Ok(Self::End),
-            _ => Err(TypeProblem::NotInList),
-        }
-    }
-}
+registry_word!(RelativeTo);
 
 fn location_type(typed: &str) -> Result<String, TypeProblem> {
     let t = typed.trim();
@@ -107,13 +97,17 @@ impl Location {
         Ok(Self { name, ..self })
     }
 
-    /// With the position relative to the event (`None` removes it).
-    #[must_use]
-    pub fn with_relative_to(self, relative_to: Option<RelativeTo>) -> Self {
-        Self {
+    /// With the position relative to the event (`None` removes it). An `Other` word is kept as it is (a known word in
+    /// `Other` becomes its variant).
+    ///
+    /// # Errors
+    /// `Empty`, `Character`, `TooLong` for the word of an `Other`.
+    pub fn with_relative_to(self, relative_to: Option<RelativeTo>) -> Result<Self, TypeProblem> {
+        let relative_to = relative_to.map(RelativeTo::checked).transpose()?;
+        Ok(Self {
             relative_to,
             ..self
-        }
+        })
     }
 
     /// With a time zone (`None` removes it): the zone the location's own times are in (RFC 8984 `timeZone`).
@@ -190,10 +184,10 @@ impl Location {
         self.name.as_deref()
     }
 
-    /// Relative to the start or the end of the event, if said.
+    /// Relative to the start or the end of the event (or a word we do not know), if said.
     #[must_use]
-    pub fn relative_to(&self) -> Option<RelativeTo> {
-        self.relative_to
+    pub fn relative_to(&self) -> Option<&RelativeTo> {
+        self.relative_to.as_ref()
     }
 
     /// The time zone, if any.
@@ -246,8 +240,8 @@ impl Location {
     /// Read the JSCalendar form: every part is checked again, so a `Location` is valid whatever the JSON said.
     ///
     /// # Errors
-    /// The first part that breaks its rule: `Character`, `TooLong` (name, description, types), `NotInList`
-    /// (`relativeTo`), `BadZone`, a `geo:` problem (`BadPlace`, `PlaceRange`, `OutOfRange`), a link problem
+    /// The first part that breaks its rule: `Character`, `TooLong` (name, description, types),
+    /// (an empty `relativeTo`), `BadZone`, a `geo:` problem (`BadPlace`, `PlaceRange`, `OutOfRange`), a link problem
     /// (`BadUri`, `NotAbsolute`, `UnsafeScheme`).
     pub fn from_parts(parts: &LocationParts) -> Result<Self, TypeProblem> {
         parts.to_location()
