@@ -131,3 +131,18 @@ fn members_path_dependencies_carry_the_crate_version() {
         }
     }
 }
+
+/// The licence texts packed into each `.crate` are real copies of the root files (no symlinks, Windows): a copy that
+/// drifts from the root file would ship another licence text than the repository has.
+#[test]
+fn member_licence_copies_equal_the_root_files() {
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+    for name in ["LICENSE-MIT", "LICENSE-APACHE"] {
+        let want = std::fs::read(format!("{root}/{name}")).expect("root licence file");
+        for member in ["fs-types", "fs-conformance", "fs-records"] {
+            let got = std::fs::read(format!("{root}/crates/{member}/{name}"))
+                .unwrap_or_else(|e| panic!("crates/{member}/{name}: {e}"));
+            assert!(got == want, "crates/{member}/{name} differs from the root {name}");
+        }
+    }
+}

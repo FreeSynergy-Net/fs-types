@@ -7,7 +7,7 @@ license.workspace = true
 rust-version.workspace = true
 repository.workspace = true
 publish = ["freesynergy"]
-include = ["src/**", "schema/**", "tests/**", "examples/**", "DESIGN.md"]
+include = ["src/**", "schema/**", "tests/**", "examples/**", "DESIGN.md", "LICENSE-MIT", "LICENSE-APACHE"]
 
 [dependencies]
 capnp = "0.27"
