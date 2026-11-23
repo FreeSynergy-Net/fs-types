@@ -14,6 +14,7 @@
 //! * Positions (v0.0.24): [`GeoPoint`] (the coordinate), [`PositionFix`] with [`FixSource`] and [`AccuracyLevel`] (origin, time, blur).
 //! * Named place (v0.0.25): [`Location`] (JSCalendar `Location`: optional name, description, types, coordinates, relativeTo, timeZone, address, links) with [`LocationParts`].
 //!
+//! * Interface name and version (`name@x.y.z`, `name@<req>`; `semver` reads the numbers): [`interface`].
 //! * Contact values: [`values`] ([`EmailAddress`], [`PhoneNumber`], [`ValueProblem`], trait [`ContactValue`]), valid on construction.
 //! * Failures as codes (first change after `v0.0.1`): [`coded`] ([`coded::ErrorCode`], [`coded::Coded`], [`coded::Code`], [`coded::Param`]); a code with typed parameters, never a sentence (ADR 0057).
 //! * Wire form: [`types_capnp`] (generated, committed; ADR 0040); [`SCHEMA_DIR`] is where the schema file lives, for crates that import it.
@@ -33,6 +34,7 @@ pub const SCHEMA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/schema");
 #[allow(clippy::all, clippy::pedantic, unused_parens, dead_code, missing_docs)]
 pub mod types_capnp;
 pub mod coded;
+pub mod interface;
 pub mod values;
 
 mod address;

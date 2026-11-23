@@ -81,3 +81,7 @@ every answer, log and export has to be the same type everywhere to be searched f
 doctests here; in a program the `disallowed-methods` entry named in the CHANGELOG, `#[allow]` only in named modules; and the canary test of
 `fs-mcp` (a marker planted in a `Secret` must not come out of any answer, error text or log). What it does not do: stop a copy made
 before (`expose_secret().clone()`), or a swap to disk.
+
+## Interface name and version (unreleased)
+
+`fs_types::interface` holds `InterfaceVersion` (`name@x.y.z`) and `InterfaceReq` (`name@<req>`, Cargo grammar, comma between comparisons): the one place for "name and version" (ADR 0045, 0077). Pattern: Value object. The numbers are read by `semver` 1.0.28 only; a two-part version (`tree@1.0`) is refused. The name follows `[a-z][a-z0-9.-]*`. `default_req()` is the generator's preset: `>=0.0.N, <0.1.0` for the `0.0.x` line, the Cargo caret from `0.1` on.

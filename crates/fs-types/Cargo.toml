@@ -17,6 +17,8 @@ iri-string = { version = "0.7", features = ["alloc"] }
 oxilangtag = "0.1"
 # `Secret<T>` wipes its value when it is dropped (RustCrypto, MIT OR Apache-2.0); the lock pins the exact version.
 zeroize = { version = "1.9", default-features = false, features = ["alloc"] }
+# SemVer 2.0.0: the one reader of versions and needs (`fs_types::interface` adds the name; no own parser).
+semver = "1.0.28"
 unicode-normalization = "0.1"
 
 [dev-dependencies]
