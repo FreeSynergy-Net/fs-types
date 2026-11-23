@@ -8,7 +8,7 @@ What is different here: the values and their wire schema are one library with no
 
 ## What it can do today
 
-Latest tag: `v0.0.4`.
+Version: `0.0.7` (see the tags of this repository for the released states).
 
 - Check, normalise and suggest for the basic types of ADR 0066 (`BasicValue`, `BasicRules`), with problem codes instead of sentences.
 - Shared value types of the topic crates: `Utc`, `LocalDateTime`, `Zone`, `PersonRef`, `Attendee`, `ContactAddress`, `ObjectId`, `Revision`, `MediaType`, `FileRef`, `Page`, `PageCursor`, `GeoPoint`, `PositionFix`, `Location`.
