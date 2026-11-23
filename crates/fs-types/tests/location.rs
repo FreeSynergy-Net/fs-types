@@ -135,8 +135,8 @@ fn from_parts_checks_every_part() {
         Some(TypeProblem::Character)
     );
     assert_eq!(
-        with(LocationParts::new().with_relative_to("")),
-        Some(TypeProblem::Empty)
+        with(LocationParts::new().with_relative_to("a\u{0}b")),
+        Some(TypeProblem::Character)
     );
     assert_eq!(
         with(LocationParts::new().with_time_zone("Europe/ Vienna")),

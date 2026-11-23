@@ -83,3 +83,51 @@ fn this_checkout_agrees_with_its_tag() {
         panic!("version gate: {e}");
     }
 }
+
+/// Every path dependency of a member names the crate version (`version = "X"` next to `path`): a packed crate asks
+/// the registry for exactly the version the workspace has. `Err` lists the lines that differ or have no `version`.
+fn check_path_deps(manifest: &str, version: &str) -> Result<(), String> {
+    let bad: Vec<String> = manifest
+        .lines()
+        .map(str::trim)
+        .filter(|l| l.contains("path = \"") && !l.starts_with('#'))
+        .filter(|l| !l.contains(&format!("version = \"{version}\"")))
+        .map(str::to_owned)
+        .collect();
+    if bad.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "path dependencies without version {version}: {bad:?}"
+        ))
+    }
+}
+
+#[test]
+fn path_dependency_versions_are_checked() {
+    let ok =
+        "fs-types = { path = \"../fs-types\", version = \"0.0.7\", registry = \"freesynergy\" }\n";
+    assert_eq!(check_path_deps(ok, "0.0.7"), Ok(()));
+    assert!(check_path_deps(ok, "0.0.8").unwrap_err().contains("0.0.8"));
+    let none = "fs-types = { path = \"../fs-types\" }\n";
+    assert!(check_path_deps(none, "0.0.7").is_err());
+    assert_eq!(
+        check_path_deps("serde = \"1\"\n# path = \"x\"\n", "0.0.7"),
+        Ok(())
+    );
+}
+
+/// The real check: the manifests of the members of this workspace (any run, not only a tag run).
+#[test]
+fn members_path_dependencies_carry_the_crate_version() {
+    let crates = concat!(env!("CARGO_MANIFEST_DIR"), "/..");
+    for entry in std::fs::read_dir(crates).expect("crates dir") {
+        let manifest = entry.expect("entry").path().join("Cargo.toml");
+        let Ok(text) = std::fs::read_to_string(&manifest) else {
+            continue;
+        };
+        if let Err(e) = check_path_deps(&text, env!("CARGO_PKG_VERSION")) {
+            panic!("{}: {e}", manifest.display());
+        }
+    }
+}

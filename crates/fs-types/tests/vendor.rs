@@ -123,7 +123,7 @@ fn a_bad_word_is_refused_only_at_the_limits_of_abuse() {
     for (word, problem) in [
         ("", TypeProblem::Empty),
         ("a\u{0}b", TypeProblem::Character),
-        (&"x".repeat(129), TypeProblem::TooLong),
+        (&"x".repeat(1025), TypeProblem::TooLong),
     ] {
         assert_eq!(
             Name::new("", &[(NameKind::Other(word.to_owned()), "v")]).err(),
@@ -201,4 +201,49 @@ fn contact_address_and_link_share_one_list_of_unsafe_schemes() {
             "{bad}"
         );
     }
+}
+
+#[test]
+fn a_vendor_word_with_a_long_domain_is_kept() {
+    // RFC 9553 section 1.8.1 limits neither the prefix nor the name; a domain has up to 253 characters, and the
+    // limit of a word is the one of the other values (1024), not 128.
+    let word = format!("{}.example.com:baz", "a".repeat(250));
+    assert!(Name::new("", &[(NameKind::Other(word.clone()), "v")]).is_ok());
+    assert_eq!(
+        NameKind::Other(word.clone()).checked().unwrap().as_str(),
+        word
+    );
+    let edge = "x".repeat(1024);
+    assert!(AddressKind::Other(edge).checked().is_ok());
+    assert_eq!(
+        RelativeTo::Other("x".repeat(1025)).checked(),
+        Err(TypeProblem::TooLong)
+    );
+}
+
+#[test]
+fn an_empty_relative_to_reads_as_not_set() {
+    // RFC 8984 section 4.2.5: an unusable value counts as omitted; it must not refuse the whole location.
+    let parts = LocationParts::new().with_name("Gate").with_relative_to("");
+    let l = Location::from_parts(&parts).unwrap();
+    assert_eq!(l.name(), Some("Gate"));
+    assert_eq!(l.relative_to(), None);
+    // the building side still refuses an empty word
+    assert_eq!(
+        Location::new()
+            .with_relative_to(Some(RelativeTo::Other(String::new())))
+            .err(),
+        Some(TypeProblem::Empty)
+    );
+}
+
+#[test]
+fn the_vendor_word_is_not_lost_by_a_conversion() {
+    // `AsRef<str>` is the one public string view; `Other` gives its word, not the variant name "other".
+    assert_eq!(NameKind::Other(VENDOR.to_owned()).as_ref(), VENDOR);
+    assert_eq!(AddressKind::Other(VENDOR.to_owned()).as_ref(), VENDOR);
+    assert_eq!(RelativeTo::Other(VENDOR.to_owned()).as_ref(), VENDOR);
+    assert_eq!(NameKind::Given2.as_ref(), "given2");
+    assert_eq!(AddressKind::PostOfficeBox.as_ref(), "postOfficeBox");
+    assert_eq!(RelativeTo::Start.as_ref(), "start");
 }

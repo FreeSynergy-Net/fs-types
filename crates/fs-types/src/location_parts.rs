@@ -172,7 +172,12 @@ impl LocationParts {
             .as_deref()
             .map(crate::GeoPoint::from_geo_uri)
             .transpose()?;
-        let relative_to = self.relative_to.as_deref().map(RelativeTo::from_text);
+        // RFC 8984 section 4.2.5: a value the reader cannot use counts as "omitted"; an empty word is no word.
+        let relative_to = self
+            .relative_to
+            .as_deref()
+            .filter(|w| !w.is_empty())
+            .map(RelativeTo::from_text);
         let time_zone = self
             .time_zone
             .as_deref()

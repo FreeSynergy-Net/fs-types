@@ -10,3 +10,7 @@ debug = false                    # no debug info for dependencies
 debug = false
 strip = "symbols"
 lto = "thin"
+
+# The registry of our crates (fs-release docs/crate-index.md): the one index string, the same everywhere.
+[registries.freesynergy]
+index = "https://github.com/FreeSynergy-Net/fs-crates"

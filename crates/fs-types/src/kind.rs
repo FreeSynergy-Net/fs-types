@@ -14,10 +14,11 @@
 
 use crate::TypeProblem;
 use crate::value::bad_char;
-use strum::{EnumString, IntoStaticStr};
+use strum::{AsRefStr, EnumString};
 
-/// Longest registry word we accept, in characters (abuse limit, not a rule of the registry).
-pub(crate) const WORD_MAX: usize = 128;
+/// Longest registry word we accept, in characters (abuse limit, not a rule of the registry): the same as for the
+/// other values (name, name part), so a vendor word with a long domain (RFC 9553 section 1.8.1 sets no limit) passes.
+pub(crate) const WORD_MAX: usize = 1024;
 
 /// The word checks shared by every registry enum: not empty, no control character, not over-long.
 pub(crate) fn word_ok(word: &str) -> Result<(), TypeProblem> {
@@ -40,10 +41,7 @@ macro_rules! registry_word {
             /// The registry word, exactly as it is written on the wire (an unknown word as it was read).
             #[must_use]
             pub fn as_str(&self) -> &str {
-                match self {
-                    Self::Other(word) => word.as_str(),
-                    known => <&'static str>::from(known),
-                }
+                self.as_ref()
             }
 
             /// Read a word. Never refuses: an unknown word is kept as `Other`, a known one is always its variant.
@@ -56,7 +54,7 @@ macro_rules! registry_word {
             /// The value in its one form (`Other` of a known word becomes the variant) after the word checks.
             ///
             /// # Errors
-            /// `Empty`, `Character` (control character), `TooLong` (over 128 characters) for the word.
+            /// `Empty`, `Character` (control character), `TooLong` (over 1024 characters) for the word.
             pub fn checked(self) -> Result<Self, $crate::TypeProblem> {
                 $crate::kind::word_ok(self.as_str())?;
                 Ok(Self::from_text(self.as_str()))
@@ -73,7 +71,7 @@ macro_rules! registry_word {
 pub(crate) use registry_word;
 
 /// The kind of a name component (RFC 9553 section 2.2.1.2), or a word of the registry we do not know.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, IntoStaticStr)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, AsRefStr)]
 #[strum(serialize_all = "camelCase")]
 #[non_exhaustive]
 pub enum NameKind {
@@ -94,13 +92,13 @@ pub enum NameKind {
     /// `separator`: literal text between the other components.
     Separator,
     /// A word that is not in the list: a newer registry value or a vendor value (`example.com:baz`), kept as read.
-    #[strum(default)]
+    #[strum(default, transparent)]
     Other(String),
 }
 registry_word!(NameKind);
 
 /// The kind of an address component (RFC 9553 section 2.5.1.2), or a word of the registry we do not know.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, IntoStaticStr)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, EnumString, AsRefStr)]
 #[strum(serialize_all = "camelCase")]
 #[non_exhaustive]
 pub enum AddressKind {
@@ -139,7 +137,7 @@ pub enum AddressKind {
     /// `separator`: literal text between the other components.
     Separator,
     /// A word that is not in the list: a newer registry value or a vendor value (`example.com:baz`), kept as read.
-    #[strum(default)]
+    #[strum(default, transparent)]
     Other(String),
 }
 registry_word!(AddressKind);
