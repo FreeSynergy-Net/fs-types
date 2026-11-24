@@ -4,6 +4,9 @@ Version = tag.
 
 ## 0.0.7
 
+- `Duration` reads the full RFC 8984 section 1.4.6 grammar `dur-cal [dur-time]`: `P1W2D` and `P1WT1H` are now accepted (a week was refused together with days or a time part; that was stricter than the RFC). Still refused: signs (`-P1D`), years and months (`P1Y`, `P1M`), empty or incomplete forms. Checked: jiff 0.2.46 accepts signs, years and months, so the own parser stays. Users that pin fs-types must re-pin to get this: fs-interfaces `rules_values.rs` (`ValueKind::Estimated`), fs-modules-planning `check.rs`.
+- Auf Deutsch: `Duration` liest die ganze Grammatik RFC 8984 Abschnitt 1.4.6 (`dur-cal [dur-time]`): `P1W2D` und `P1WT1H` werden angenommen. Weiter abgelehnt: Vorzeichen, Jahre, Monate, leere oder unvollständige Formen. jiff 0.2.46 nimmt Vorzeichen/Jahre/Monate an, darum bleibt der eigene Parser. Nutzer müssen neu pinnen: fs-interfaces `rules_values.rs`, fs-modules-planning `check.rs`.
+
 Prepared (K-4). First version for the registry `freesynergy` (ENTSCHEID-Kaskade B2). 0.0.7 appears only with the registry: it is not tagged before the registry exists.
 
 - Crate version = tag is now checked: `crates/repo-gates/tests/tag_version.rs` fails a tag run when `Cargo.toml` differs from the tag or `CHANGELOG.md` has no non-empty section of that version. Reason: tag v0.0.6 was cut while `Cargo.toml` said 0.0.5.

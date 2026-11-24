@@ -1,13 +1,15 @@
 //! `Duration`: a span of time, RFC 8984 section 1.4.6 (the JSCalendar subset of ISO 8601 durations).
 //!
-//! Pattern: Value object, Template method (`BasicValue`). Own small parser: the grammar is a handful of rules and no
-//! free crate keeps to this subset (no years, no months, a week stands alone). Units are kept as written, never
-//! converted into each other (`PT60M` stays `PT60M`, as JSCalendar does); the canonical text is upper case, without
-//! leading zeros. A negative duration is not a value here (JSCalendar's `Duration` has no sign). Time zones and
+//! Pattern: Value object, Template method (`BasicValue`) - a validated value whose parse and canonical text come from
+//! the trait defaults. Grammar (RFC 8984 section 1.4.6): `"P" (dur-cal [dur-time] / dur-time)`, `dur-cal = (dur-week
+//! [dur-day] / dur-day)`, so `P1W2D` and `P1WT1H` are read; no sign, no years, no months.
+//! Geprüft: jiff 0.2.46 – kennt Vorzeichen/Jahre/Monate, die RFC 8984 nicht erlaubt; darum eigener Parser.
+//! Units are kept as written, never converted into each other (`PT60M` stays `PT60M`, as JSCalendar does); the
+//! canonical text is upper case, without leading zeros. A negative duration is not a value here (JSCalendar's `Duration` has no sign). Time zones and
 //! clocks are not involved: the span is plain arithmetic on seconds.
 //!
 //! ```text
-//! P1W    P2D    P1DT2H30M    PT45S    PT0.5S
+//! P1W    P1W2D    P1WT1H    P2D    P1DT2H30M    PT45S    PT0.5S
 //! ```
 
 use crate::types_capnp::BasicType;
@@ -20,7 +22,7 @@ const DAY: u64 = 86_400;
 const HOUR: u64 = 3_600;
 const MINUTE: u64 = 60;
 
-/// A duration: weeks alone, or days and a time part (hours, minutes, seconds with an optional fraction).
+/// A duration: weeks and days (`dur-cal`), then a time part (hours, minutes, seconds with an optional fraction).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Duration {
     weeks: Option<u64>,
@@ -89,25 +91,22 @@ impl BasicValue for Duration {
             seconds: None,
             fraction: String::new(),
         };
-        if let Some((w, _)) = take(&mut rest, 'W')? {
-            d.weeks = Some(w);
-        } else {
-            d.days = take(&mut rest, 'D')?.map(|(n, _)| n);
-            if let Some(time) = rest.strip_prefix('T') {
-                rest = time;
-                if rest.is_empty() {
-                    return Err(TypeProblem::BadDuration);
-                }
-                d.hours = take(&mut rest, 'H')?.map(|(n, _)| n);
-                d.minutes = take(&mut rest, 'M')?.map(|(n, _)| n);
-                if let Some((s, f)) = take(&mut rest, 'S')? {
-                    d.seconds = Some(s);
-                    d.fraction = f;
-                    // RFC 8984: seconds follow minutes (`dur-minute = 1*DIGIT "M" [dur-second]`), so hours and
-                    // seconds without minutes are read, and written with `0M` (read tolerantly, write strictly).
-                    if d.hours.is_some() && d.minutes.is_none() {
-                        d.minutes = Some(0);
-                    }
+        d.weeks = take(&mut rest, 'W')?.map(|(n, _)| n);
+        d.days = take(&mut rest, 'D')?.map(|(n, _)| n);
+        if let Some(time) = rest.strip_prefix('T') {
+            rest = time;
+            if rest.is_empty() {
+                return Err(TypeProblem::BadDuration);
+            }
+            d.hours = take(&mut rest, 'H')?.map(|(n, _)| n);
+            d.minutes = take(&mut rest, 'M')?.map(|(n, _)| n);
+            if let Some((s, f)) = take(&mut rest, 'S')? {
+                d.seconds = Some(s);
+                d.fraction = f;
+                // RFC 8984: seconds follow minutes (`dur-minute = 1*DIGIT "M" [dur-second]`), so hours and
+                // seconds without minutes are read, and written with `0M` (read tolerantly, write strictly).
+                if d.hours.is_some() && d.minutes.is_none() {
+                    d.minutes = Some(0);
                 }
             }
         }

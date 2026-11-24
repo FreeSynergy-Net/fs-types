@@ -114,9 +114,27 @@ fn duration_follows_the_jscalendar_grammar() {
     ] {
         assert_eq!(canon::<Duration>(ok), ok);
     }
+    // RFC 8984 section 1.4.6: `dur-cal = (dur-week [dur-day] / dur-day)`, `duration = "P" (dur-cal [dur-time] / dur-time)`.
+    // So a week may be followed by days and by a time part; this was refused before (a week stood alone), which
+    // was stricter than the RFC. Signs, years and months stay refused: the RFC has none of them.
+    for ok in ["P1W2D", "P1WT1H", "P1W2DT1H", "PT30M", "PT1.5S", "P0D"] {
+        assert_eq!(canon::<Duration>(ok), ok);
+    }
+    assert_eq!(
+        Duration::parse("P1W2D").unwrap().whole_seconds(),
+        Some(777_600)
+    );
+    assert_eq!(
+        Duration::parse("P1WT1H").unwrap().whole_seconds(),
+        Some(608_400)
+    );
+    // Counter-proofs: red if the parser took a sign or calendar units.
+    for t in ["P1M", "-P1D", "P1Y"] {
+        assert_eq!(bad::<Duration>(t), TypeProblem::BadDuration, "{t}");
+    }
     for t in [
-        "1D", "P", "PT", "P1H", "P1DT", "PT1D", "P1Y", "P1M", "P1W2D", "-P1D", "P1.5D", "PT.5S",
-        "PT1.S", "P1DT1S1M", "P1 D",
+        "1D", "P", "PT", "P1H", "P1DT", "PT1D", "P1Y", "P1M", "-P1D", "P1D1W", "P1WD", "P1W2D1H",
+        "P1WT", "P1.5D", "PT.5S", "PT1.S", "P1DT1S1M", "P1 D",
     ] {
         assert_eq!(bad::<Duration>(t), TypeProblem::BadDuration, "{t}");
     }
