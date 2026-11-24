@@ -27,19 +27,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@d6e6d2e9aff407b1232936d0666d0ec080b4360b
+      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@7cfb2298bd4bcdb13f92c3651bfc8377fc30c7ed
         with:
           cache-key: semver
       - name: semver fs-types
-        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@d6e6d2e9aff407b1232936d0666d0ec080b4360b
+        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@7cfb2298bd4bcdb13f92c3651bfc8377fc30c7ed
         with:
           package: fs-types
       - name: semver fs-conformance
-        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@d6e6d2e9aff407b1232936d0666d0ec080b4360b
+        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@7cfb2298bd4bcdb13f92c3651bfc8377fc30c7ed
         with:
           package: fs-conformance
       - name: semver fs-records
-        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@d6e6d2e9aff407b1232936d0666d0ec080b4360b
+        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@7cfb2298bd4bcdb13f92c3651bfc8377fc30c7ed
         with:
           package: fs-records
 
@@ -50,12 +50,12 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@d6e6d2e9aff407b1232936d0666d0ec080b4360b
+      - uses: FreeSynergy-Net/fs-release/actions/setup-rust@7cfb2298bd4bcdb13f92c3651bfc8377fc30c7ed
         with:
           cache-key: semver
       - name: cargo-semver-checks from the action (install only, no check)
         id: tool
-        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@d6e6d2e9aff407b1232936d0666d0ec080b4360b
+        uses: FreeSynergy-Net/fs-release/actions/semver-baseline@7cfb2298bd4bcdb13f92c3651bfc8377fc30c7ed
       - name: control (unchanged tree against HEAD must be green)
         env:
           SEMVER: ${{ steps.tool.outputs.semver-checks }}
