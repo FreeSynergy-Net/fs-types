@@ -1,0 +1,18 @@
+# cargo-nextest profiles for fs-types (workflow testlauf, CLAUDE.md §4: little but often). Vorlage fs-components 216594c0.
+# Geprüft mit `cargo nextest list` (C4 Batch 1), nicht ausgeführt.
+# Namenskonvention wie im Muster; Zuordnung nur nach Dateiname (Binary = <paket>::<datei>, Paket = Verzeichnis angenommen).
+# Nur Stufen, zu denen das Repo Treffer hat; binary(...) nur mit nachgewiesenem Treffer (nextest verweigert leere Mengen).
+# Stufen: quick (Unit/Modell) | time (--stress-count 10) | socket | security | platform | picture | release (nur CI).
+
+[profile.default]
+fail-fast = false
+
+[profile.quick]
+fail-fast = true
+retries = 0
+slow-timeout = { period = "30s", terminate-after = 4 }
+
+[profile.release]
+fail-fast = false
+retries = 0
+slow-timeout = { period = "60s", terminate-after = 10 }
